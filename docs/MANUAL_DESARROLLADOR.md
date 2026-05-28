@@ -1,560 +1,580 @@
-# Manual de desarrollador — SIGCON
+# Descripción de diseño de software (SDD) — SIGCON
 
-Guía técnica para instalar, extender y mantener el sistema SIGCON (backend Spring Boot + frontend React).
+| Campo | Valor |
+|-------|--------|
+| **Identificación del documento** | SIGCON-SDD-001 |
+| **Título** | Manual de desarrollador / Descripción de diseño |
+| **Producto** | SIGCON — Sistema de Gestión Contable y Financiera |
+| **Versión del documento** | 1.1 |
+| **Versión del producto** | 2026-1 (Proyecto Integrador USCO) |
+| **Fecha** | 2026-05-28 |
+| **Estándar de referencia** | IEEE Std 1016-2009, IEEE Std 26512-2018, IEEE Std 1012-2016 |
+
+---
+
+## Historial de revisiones
+
+| Versión | Fecha | Descripción |
+|---------|--------|-------------|
+| 1.0 | 2026-05 | SDD inicial |
+| 1.1 | 2026-05-28 | Estructura IEEE 1016; FV, inventario, comprobantes standalone, vistas de diseño |
 
 ---
 
 ## Tabla de contenidos
 
-1. [Visión técnica](#1-visión-técnica)
-2. [Entorno de desarrollo](#2-entorno-de-desarrollo)
-3. [Estructura del repositorio](#3-estructura-del-repositorio)
-4. [Backend — arquitectura](#4-backend--arquitectura)
-5. [Backend — capas y convenciones](#5-backend--capas-y-convenciones)
-6. [Backend — seguridad y permisos](#6-backend--seguridad-y-permisos)
-7. [Backend — base de datos](#7-backend--base-de-datos)
-8. [Backend — API REST](#8-backend--api-rest)
-9. [Dominios principales](#9-dominios-principales)
-10. [Frontend — arquitectura](#10-frontend--arquitectura)
-11. [Frontend — menú y rutas](#11-frontend--menú-y-rutas)
-12. [Frontend — consumo del API](#12-frontend--consumo-del-api)
-13. [Agregar un nuevo módulo](#13-agregar-un-nuevo-módulo)
-14. [Asistente IA](#14-asistente-ia)
-15. [Tests y calidad](#15-tests-y-calidad)
-16. [Despliegue](#16-despliegue)
-17. [Solución de problemas](#17-solución-de-problemas)
-18. [Referencias](#18-referencias)
+1. [Introducción](#1-introducción)
+2. [Referencias](#2-referencias)
+3. [Definiciones y abreviaturas](#3-definiciones-y-abreviaturas)
+4. [Contexto y partes interesadas](#4-contexto-y-partes-interesadas)
+5. [Puntos de vista del diseño](#5-puntos-de-vista-del-diseño)
+6. [Decisiones de diseño](#6-decisiones-de-diseño)
+7. [Descripción detallada por subsistema](#7-descripción-detallada-por-subsistema)
+8. [Interfaces externas](#8-interfaces-externas)
+9. [Persistencia y datos](#9-persistencia-y-datos)
+10. [Seguridad](#10-seguridad)
+11. [Frontend](#11-frontend)
+12. [Verificación y validación](#12-verificación-y-validación)
+13. [Despliegue y operación](#13-despliegue-y-operación)
+14. [Mantenimiento y extensión](#14-mantenimiento-y-extensión)
+15. [Trazabilidad](#15-trazabilidad)
+- [Apéndice A — Mapa de paquetes backend](#apéndice-a--mapa-de-paquetes-backend)
+- [Apéndice B — Endpoints principales](#apéndice-b--endpoints-principales)
 
 ---
 
-## 1. Visión técnica
+## 1. Introducción
 
-| Capa | Tecnología | Responsabilidad |
-|------|------------|-----------------|
-| Presentación | React 18, Vite, Redux | UI, rutas, estado de sesión |
-| API | Spring Boot 3.5, Java 17 | Reglas de negocio, persistencia, seguridad |
-| Datos | PostgreSQL 14+ | Almacenamiento relacional |
-| Auth | JWT (stateless) | Autenticación y autorización por permisos |
+### 1.1 Propósito
 
-Principio arquitectónico: **hexagonal (Ports & Adapters)** en backend — la lógica de negocio vive en `domain`, los DTOs en `application`, los adaptadores HTTP en `interfaces` (controllers).
+Este documento describe el **diseño de implementación** de SIGCON para desarrolladores, integradores y mantenedores. Complementa el [Manual de usuario](MANUAL_USUARIO.md) y el [README](../README.md).
 
----
+### 1.2 Alcance
 
-## 2. Entorno de desarrollo
+Cubre el monorepo `dev/`:
 
-### 2.1 Herramientas
+- `backend/` — API REST Spring Boot 3.5, Java 17.
+- `Frontend/` — SPA React 18 + Vite.
+- `docs/` — documentación.
+- Orquestación Docker (`docker-compose.local.yml`).
 
-- JDK 17
-- Maven (incluido `mvnw` en `backend/`)
-- Node.js 18+ y npm (para `Frontend/`)
-- Docker Desktop (opcional, recomendado para PostgreSQL)
-- IDE: IntelliJ IDEA / VS Code + extensiones Java y ESLint
+### 1.3 Convenciones del documento
 
-### 2.2 Clonar y levantar
-
-```bash
-git clone <URL_REPOSITORIO>
-cd dev
-```
-
-**Con Docker (raíz):**
-
-```bash
-docker compose -f docker-compose.local.yml --env-file backend/.env up --build -d
-```
-
-**Backend local:**
-
-```powershell
-cd backend
-$env:SPRING_PROFILES_ACTIVE = "dev"
-.\mvnw.cmd spring-boot:run
-```
-
-**Frontend local:**
-
-```bash
-cd Frontend
-npm install
-npm run dev
-```
-
-### 2.3 Usuario de prueba (solo desarrollo)
-
-Tras el primer arranque, `DataInitializer` puede crear:
-
-| Campo | Valor (entorno dev) |
-|-------|---------------------|
-| Email | `superadmin@gmail.com` |
-| Contraseña | `123456` |
-| Rol | `SUPERADMIN` |
-
-No use estas credenciales en producción.
-
-### 2.4 URLs locales
-
-| Servicio | URL |
-|----------|-----|
-| API | http://localhost:8080 |
-| Swagger (perfil `dev`) | http://localhost:8080/swagger-ui.html |
-| Frontend | http://localhost:5173 |
-| Adminer | http://localhost:8081 |
+- Rutas de API: prefijo `/api/v1` salvo módulos legacy (`/auth`, `/api/menus`).
+- Permisos en BD: código `CREATE_X`; authority Spring: `PERM_CREATE_X`.
+- Identificadores de requisitos de ejemplo: `REQ-xxx` (trazabilidad en sección 15).
 
 ---
 
-## 3. Estructura del repositorio
+## 2. Referencias
 
-```
-dev/
-├── backend/
-│   ├── src/main/java/com/sigcon/backend/
-│   │   ├── {dominio}/          # Un paquete por bounded context
-│   │   │   ├── application/      # DTOs, requests
-│   │   │   ├── domain/
-│   │   │   │   ├── model/
-│   │   │   │   ├── repository/
-│   │   │   │   └── service/
-│   │   │   └── interfaces/     # @RestController
-│   │   ├── general/            # Security, config, OpenAPI
-│   │   └── utils/              # UserUtil, DataTable, respuestas JSON
-│   ├── src/main/resources/
-│   │   ├── application.properties
-│   │   ├── application-dev.properties
-│   │   ├── db/seeds/           # Datos iniciales SQL
-│   │   └── db/migration/       # Migraciones Flyway/manual
-│   ├── pom.xml
-│   └── docker-compose.yml
-├── Frontend/
-│   ├── src/
-│   │   ├── pages/              # Pantallas por módulo
-│   │   ├── components/         # atoms, molecules, organism, templates
-│   │   ├── utils/              # fetch, map_menu, functions
-│   │   └── routes/
-│   └── vite.config.js
-├── docs/
-│   ├── MANUAL_USUARIO.md
-│   └── MANUAL_DESARROLLADOR.md
-└── README.md
-```
+| ID | Referencia |
+|----|------------|
+| [R1] | IEEE Std 1016-2009 — Software Design Descriptions |
+| [R2] | IEEE Std 26512-2018 — Developing information for users |
+| [R3] | IEEE Std 1012-2016 — Verification and Validation |
+| [R4] | IEEE Std 29148-2018 — Requirements Engineering |
+| [R5] | SIGCON-MUD-001 — Manual de usuario |
+| [R6] | Spring Boot 3.5 / Spring Security 6 — Documentación oficial |
+| [R7] | React 18 / Vite — Documentación oficial |
 
 ---
 
-## 4. Backend — arquitectura
+## 3. Definiciones y abreviaturas
 
-```
-  HTTP Request
-       │
-       ▼
-┌──────────────┐     ┌─────────────────┐     ┌──────────────────┐
-│ Controller   │────►│ Domain Service  │────►│ Repository (JPA) │
-│ (interfaces) │     │ (domain/service)│     │                  │
-└──────────────┘     └────────┬────────┘     └──────────────────┘
-                              │
-                              ▼
-                     Otros servicios / utils
-                     (UserUtil, DiaryBookService, …)
-```
-
-- **No** poner lógica de negocio en controllers.
-- **Sí** usar `@Transactional` en servicios que modifican varias entidades.
-- DTOs de entrada/salida en `application`, no exponer entidades JPA directamente en la API.
+| Término | Definición |
+|---------|------------|
+| **Bounded context** | Paquete Java `com.sigcon.backend.{dominio}` |
+| **DDD ligero** | Servicios de dominio + repositorios JPA |
+| **SDD** | Software Design Description |
+| **DataTable** | Contrato de paginación/filtrado usado en listados |
+| **Standalone voucher** | Comprobante sin `invoiceId` (nómina, servicios) |
 
 ---
 
-## 5. Backend — capas y convenciones
+## 4. Contexto y partes interesadas
 
-### 5.1 Entidades JPA
+### 4.1 Diagrama de contexto (IEEE 1016 — vista de contexto)
 
-- Ubicación: `domain/model/`
-- Soft delete: `@SQLDelete` + `@Where(clause = "deleted_at IS NULL")`
-- Auditoría: `createdAt`, `updatedAt`, `deletedAt` con `@PrePersist` / `@PreUpdate`
-
-### 5.2 Repositorios
-
-- Extienden `JpaRepository` y, si hay filtros dinámicos, `JpaSpecificationExecutor`
-- Consultas complejas: `@Query` JPQL en la interfaz
-
-### 5.3 Servicios de dominio
-
-- `@Service` + `@RequiredArgsConstructor` (Lombok)
-- Inyección de repositorios y otros servicios
-- Usuario actual: `UserUtil.getUser()` → entidad `User` con `Company`
-
-### 5.4 DTOs y respuestas
-
-Respuesta estándar exitosa:
-
-```java
-SuccessRespondJson.getSuccessRespondMessage(
-    Optional.of("Mensaje"),
-    Optional.of(datos)
-);
+```
+                    ┌─────────────┐
+                    │   Usuario   │
+                    └──────┬──────┘
+                           │ HTTPS
+                    ┌──────▼──────┐
+                    │  Frontend   │
+                    │  React/Vite │
+                    └──────┬──────┘
+                           │ REST + JWT
+                    ┌──────▼──────┐
+                    │   Backend   │
+                    │ Spring Boot │
+                    └──────┬──────┘
+           ┌───────────────┼───────────────┐
+           │               │               │
+    ┌──────▼──────┐ ┌──────▼──────┐ ┌─────▼─────┐
+    │ PostgreSQL  │ │  OpenAI API │ │  (Email)  │
+    │             │ │ (opcional)  │ │  reset pwd│
+    └─────────────┘ └─────────────┘ └───────────┘
 ```
 
-Error:
+### 4.2 Partes interesadas
 
-```java
-ErrorRespondJson.getErrorRespondMessage(Optional.of("Descripción del error"));
-```
-
-### 5.5 DataTables (listados paginados)
-
-- Request: `DataTableRequest` (start, length, draw, columns, search)
-- Response: `DataTableResponse.from(page.map(this::toDto), draw)`
-- Filtros: `DataTableSpecificationBuilder<T>`
-
-Ejemplo en `VoucherService.getVouchers`.
+| Rol | Interés en el diseño |
+|-----|---------------------|
+| Desarrollador backend | Servicios, entidades, migraciones |
+| Desarrollador frontend | Páginas, menú dinámico, componentes |
+| Administrador BD | Seeds, Flyway, índices |
+| Auditor / docente | Trazabilidad REQ ↔ módulo |
 
 ---
 
-## 6. Backend — seguridad y permisos
+## 5. Puntos de vista del diseño
 
-### 6.1 Flujo JWT
+### 5.1 Vista lógica (composición)
 
-1. `POST /auth/login` → token + objeto `user` (incluye permisos).
-2. Cliente envía `Authorization: Bearer <token>` en cada petición.
-3. `SecurityFilterChain` valida JWT; `BlackListFilter` rechaza tokens revocados.
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Capa de presentación                  │
+│  Controllers (@RestController) + DTOs application        │
+├─────────────────────────────────────────────────────────┤
+│                    Capa de dominio                       │
+│  Services (@Service) + Entities + Repository interfaces  │
+├─────────────────────────────────────────────────────────┤
+│                    Capa de infraestructura               │
+│  JPA Repositories, adapters, clients (OpenAI)            │
+└─────────────────────────────────────────────────────────┘
+```
 
-Configuración: `general/security/SecurityConfig.java`, `JwtService.java`.
+**Regla:** la lógica de negocio reside en `domain/service`, no en controllers.
 
-### 6.2 Permisos en endpoints
+### 5.2 Vista de despliegue (física)
+
+| Nodo | Artefacto | Puerto típico |
+|------|-----------|---------------|
+| Cliente | Navegador | — |
+| Servidor app | `backend` JAR / contenedor | 8080 |
+| Servidor web | `Frontend` Nginx / Vite dev | 5173 |
+| BD | PostgreSQL | 5432 |
+
+### 5.3 Vista de procesos — flujo comprobante standalone
+
+```mermaid
+sequenceDiagram
+    participant UI as Frontend
+    participant API as VouchersController
+    participant VS as VoucherService
+    participant VF as VoucherAccountingAccountFilterService
+    participant AE as AccountingEntryService
+
+    UI->>API: POST /vouchers/create
+    API->>VS: createVoucher(request)
+    VS->>VF: validateStandaloneManualLines
+    VS->>VS: buildTreasuryLine
+    VS->>AE: createAccountingEntry
+    VS-->>API: VouchersEntity
+    API-->>UI: SuccessRespondJson
+```
+
+### 5.4 Vista de desarrollo (estructura repo)
+
+Véase [Apéndice A](#apéndice-a--mapa-de-paquetes-backend) y README.
+
+---
+
+## 6. Decisiones de diseño
+
+| ID | Decisión | Alternativa rechazada | Justificación |
+|----|----------|----------------------|---------------|
+| DD-01 | Arquitectura hexagonal en backend | Monolito en 3 capas anémico | Separación dominio / adaptadores |
+| DD-02 | JWT stateless | Sesión servidor | Escalabilidad, SPA |
+| DD-03 | Menú dinámico desde BD | Menú estático solo en FE | Permisos por rol sin redespliegue |
+| DD-04 | Asiento automático en pagos de factura | Siempre manual | Reduce error operativo |
+| DD-05 | Líneas manuales múltiples en standalone | Una sola línea fija D/C | Flexibilidad contable |
+| DD-06 | Tesorería 11/12 solo vía método de pago en standalone | Captura manual banco | Coherencia con origen de fondos |
+| DD-07 | Stock en `products.stock` | Kardex separado (fase 1) | Simplicidad PI; extensible |
+| DD-08 | `InputSelectModal` (Select2) en formularios | `<select>` nativo | UX consistente en modales |
+
+---
+
+## 7. Descripción detallada por subsistema
+
+### 7.1 Parametrización (`parametrization`)
+
+- Usuarios, roles, permisos (`roles_permissions`).
+- Empresas, módulos, menús (`menu_permissions`).
+- Autenticación: `AuthController` → JWT.
+
+### 7.2 Listas contables (`lists_accounting`)
+
+- PUC: `ChartOfAccountController`.
+- Cuentas auxiliares: `AccountingAccountController`.
+- Impuestos, tasas, centros de costo, depreciación.
+
+### 7.3 Terceros (`third_parties`)
+
+- CRUD terceros con roles (`CLIENTE`, `PROVEEDOR`, `EMPLEADO`).
+- Endpoint comprobantes: `GET /api/v1/vouchers/third-parties?role=EMPLEADO`.
+
+### 7.4 Facturación (`invoices`)
+
+| Controlador | Ruta base | Tipo |
+|-------------|-----------|------|
+| `InvoiceFCController` | `/api/v1/invoices/fc` | Compra |
+| `InvoiceFVController` | `/api/v1/invoices/fv` | Venta |
+| `InvoiceOCController` | `/api/v1/invoices/oc` | Orden |
+| `InvoicesController` | `/api/v1/invoices/{id}` | Genérico + PDF |
+
+**Servicios clave:**
+
+- `InvoiceService` — creación por tipo (estado `BILLED` en FC/FV).
+- `LineInvoiceService` — totales, `syncProductPrices` (FC→`price`, FV→`salePrice`).
+- `ProductInventoryService` — `applyStockMovement` (FC suma, FV resta con validación ≥ 0).
+
+**Migraciones relevantes:**
+
+- `V15__products_sale_price_stock.sql` — columnas `sale_price`, `stock`.
+- `V16__invoice_fv_menu.sql` — menú y permisos FV.
+
+### 7.5 Comprobantes (`vouchers`)
+
+**Clases principales:**
+
+| Clase | Responsabilidad |
+|-------|-----------------|
+| `VoucherService` | CRUD, asiento, validación standalone |
+| `VoucherAccountingAccountFilterService` | Filtro PUC por tipo y línea D/C |
+| `VouchersController` | API REST |
+
+**Tipos standalone:** `PAYROLL`, `SERVICE_PAYMENT`, `SERVICE_RECEIPT`.
+
+**Validación líneas manuales (`validateStandaloneManualLines`):**
+
+- Egreso: `Σ débitos − Σ créditos = monto`.
+- Ingreso: `Σ créditos − Σ débitos = monto`.
+- Prohibido cuentas 11/12 en líneas manuales.
+- `buildTreasuryLine()` agrega línea banco/caja al persistir.
+
+**Listado standalone:** `POST /api/v1/vouchers/search` con `standaloneOnly: true`.
+
+### 7.6 Contabilidad (`accounting_entry`, `books`)
+
+- Creación de `AccountingEntry` y líneas.
+- Periodos contables abiertos/cerrados (`AccountingPeriod`).
+
+### 7.7 Tesorería (`banks`, `cash`)
+
+- Cuentas, chequeras, cheques, movimientos, conciliación.
+
+### 7.8 Activos y productos (`assets`, `products`)
+
+- Activos fijos, depreciación, NIIF.
+- `ProductController` — CRUD con `price`, `salePrice`, `stock`.
+
+### 7.9 Dashboard y asistente
+
+- `DashboardService` — KPIs por empresa / global.
+- `AssistantController` — OpenAI con contexto de sesión.
+
+---
+
+## 8. Interfaces externas
+
+### 8.1 API REST
+
+- Estilo: JSON sobre HTTP.
+- Autenticación: header `Authorization: Bearer <token>`.
+- Listados: `DataTableRequest` / `DataTableResponse`.
+- Documentación interactiva: Swagger (`/swagger-ui.html`, perfil `dev`).
+
+### 8.2 Contrato de línea contable (fragmento)
+
+```json
+{
+  "accountingAccountCode": "5105",
+  "type": "DEBIT",
+  "amount": 1500000.00
+}
+```
+
+Paquete: `accounting_entry.application` → `AccountingEntryLineRequest`.
+
+### 8.3 Contrato de comprobante (fragmento)
+
+Campos en `Transaction` / request de voucher:
+
+- `voucherTypeId`, `valuePayment`, `methodPaymentId`, `paymentFormId`
+- `bankAccount`, `cashAccount`, `check`, `thirdPartyId`
+- `lines[]` — líneas manuales
+- `invoiceId` — null en standalone
+
+---
+
+## 9. Persistencia y datos
+
+### 9.1 Motor
+
+PostgreSQL 14+; Hibernate `ddl-auto=update` en desarrollo.
+
+### 9.2 Scripts
+
+| Ubicación | Propósito |
+|-----------|-----------|
+| `db/seeds/*.sql` | Datos maestros |
+| `db/migration/V*.sql` | Cambios incrementales |
+| `db/indexes/*.sql` | Índices |
+
+### 9.3 Entidades transversales
+
+```
+vouchers ──► accounting_entry ──► accounting_entry_line
+                │
+invoices ──► lines_invoice ──► products (price, sale_price, stock)
+```
+
+### 9.4 Modelo producto (extracto)
+
+| Columna | Tipo | Notas |
+|---------|------|-------|
+| `price` | NUMERIC | Precio compra |
+| `sale_price` | NUMERIC | Precio venta |
+| `stock` | NUMERIC | Existencias |
+
+---
+
+## 10. Seguridad
+
+### 10.1 Flujo JWT
+
+1. `POST /auth/login` → token + usuario con permisos.
+2. Filtro JWT en cadena Spring Security.
+3. Blacklist opcional de tokens revocados.
+
+### 10.2 Autorización
 
 ```java
 @PreAuthorize("hasAuthority('PERM_CREATE_VOUCHER') or hasAuthority('ROLE_SUPERADMIN')")
 ```
 
-- En base de datos el código del permiso es `CREATE_VOUCHER` (sin prefijo).
-- Spring expone la authority como `PERM_CREATE_VOUCHER` (ver `User.getAuthorities()`).
+### 10.3 Aislamiento multi-empresa
 
-### 6.3 Alcance por empresa
-
-La mayoría de servicios filtran por `user.getCompany()`:
-
-```java
-User user = userUtil.getUser();
-Company company = user.getCompany();
-```
-
-`DashboardService` distingue `SUPERADMIN` (alcance global) vs usuario de empresa.
+`UserUtil.getUser().getCompany()` en servicios de negocio.
 
 ---
 
-## 7. Backend — base de datos
+## 11. Frontend
 
-### 7.1 Motor y configuración
-
-- PostgreSQL
-- Variables en `backend/.env` → `application.properties`
-- Hibernate: `spring.jpa.hibernate.ddl-auto=update` (desarrollo)
-
-### 7.2 Seeds y migraciones
-
-| Ruta | Uso |
-|------|-----|
-| `db/seeds/*.sql` | Datos maestros (menús, permisos, tipos de comprobante, PUC base) |
-| `db/indexes/*.sql` | Índices |
-| `db/migration/V*.sql` | Cambios incrementales (permisos, columnas) |
-
-`DataInitializer` ejecuta scripts al arranque en entornos configurados.
-
-### 7.3 Entidades transversales
-
-- **Periodos contables:** `books` → `GeneralLedger`, `DiaryBook`, `AccountingPeriod`
-- **Asientos:** `accounting_entry` → `AccountingEntry`, `AccountingEntryLine`
-- **Comprobantes:** `vouchers` → `VouchersEntity`, `VoucherTypesEntity`
-
----
-
-## 8. Backend — API REST
-
-### 8.1 Prefijo y versionado
-
-Base: `/api/v1/{recurso}`
-
-Ejemplos:
-
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| POST | `/api/v1/vouchers/search` | Listado DataTable |
-| POST | `/api/v1/vouchers/create` | Crear comprobante |
-| GET | `/api/v1/vouchers/{id}` | Detalle |
-| GET | `/api/v1/vouchers/types` | Tipos de comprobante |
-| POST | `/api/v1/vouchers/accounting-accounts/filter` | Cuentas filtradas por tipo |
-| POST | `/api/v1/accounting-accounts` | Listado cuentas contables |
-| GET | `/api/v1/dashboard/overview` | KPIs dashboard |
-| POST | `/api/v1/assistant/chat` | Asistente IA |
-
-Documentación interactiva: **Swagger UI** (perfil `dev`).
-
-### 8.2 Cuerpo de comprobante (`Transaction`)
-
-Paquete: `invoices.application.requests.dataInvoices.Transaction`
-
-Campos relevantes:
-
-- `valuePayment`, `paymentFormId`, `methodPaymentId`
-- `bankAccount`, `cashAccount`, `check`
-- `invoiceId`, `voucherTypeId`
-- `lines` → lista de `AccountingEntryLineRequest` (cuentas manuales)
-
----
-
-## 9. Dominios principales
-
-| Paquete | Responsabilidad |
-|---------|-----------------|
-| `parametrization` | Usuarios, roles, permisos, empresas, menús |
-| `lists_accounting` | PUC, cuentas contables, centros de costo, impuestos |
-| `invoices` | FC, OC, líneas, estados |
-| `vouchers` | Comprobantes, tipos, filtro de cuentas, asientos |
-| `accounting_entry` | Creación de asientos y líneas |
-| `books` | Libro diario, periodos |
-| `banks` | Bancos, cuentas, cheques, conciliación, movimientos |
-| `assets` | Activos, depreciación, NIIF |
-| `third_parties` | Terceros y segmentación |
-| `dashboard` | Indicadores agregados |
-| `assistant` | Integración OpenAI con contexto de sesión |
-| `products` | Catálogo de productos |
-
-### 9.1 Comprobantes — lógica contable
-
-`VoucherService.createAccountingEntry`:
-
-- Con **factura FC** + tipo `PAYMENT`: asiento automático (proveedores vs banco/caja).
-- Con **factura OC** + tipo `RECEIPT`: asiento automático (banco/caja vs cartera).
-- Sin factura o tipos `PAYROLL`, `SERVICE_*`: usa `request.getLines()` validadas por `VoucherAccountingAccountFilterService`.
-
-Filtro de cuentas: `VoucherAccountingAccountFilterService` — reglas por `voucherTypeCode` + `DEBIT`/`CREDIT` y prefijos PUC.
-
-### 9.2 Resolución de tipo de comprobante
-
-`VoucherService.resolveVoucherTypeId`:
-
-1. `request.voucherTypeId` si viene informado.
-2. Si hay `invoiceId`: FC → `PAYMENT`, OC → `RECEIPT`.
-3. Si no, error: debe seleccionar tipo.
-
----
-
-## 10. Frontend — arquitectura
+### 11.1 Estructura
 
 ```
-src/
-├── components/
-│   ├── templates/     # MainTemplate, AuthTemplate
-│   ├── organism/      # DataTable, MenuNav, AssistantChat
-│   └── molecules/     # Inputs, AlertPage
-├── pages/             # Una carpeta por módulo de negocio
-├── utils/
-│   ├── fetch.jsx      # fetchHelper + JWT
-│   ├── map_menu.jsx   # COMPONENT_MAP + getMenu()
-│   └── functions.jsx  # base_url, formatPrice, formatDate
-└── routes/routes.jsx  # Rutas dinámicas según menú API
+Frontend/src/
+├── pages/{modulo}/     # Pantallas
+├── components/         # molecules: inputSelectModal, InputModal
+├── utils/map_menu.jsx  # COMPONENT_MAP
+└── routes/routes.jsx   # Rutas dinámicas + estáticas (vista factura)
 ```
 
-Estado global Redux:
+### 11.2 Menú dinámico
 
-- `user`: usuario y token
-- `modules`: árbol de menú desde API
+1. `GET /api/modules/menu` tras login.
+2. `COMPONENT_MAP` mapea `component` BD → componente React.
+3. Rutas anidadas: `renderMenuRoutesFlat`.
 
----
+### 11.3 Módulos de facturas (frontend)
 
-## 11. Frontend — menú y rutas
+| Componente BD | Ruta | Carpeta |
+|---------------|------|---------|
+| `INVOICE_BILL` | `invoice-bill` | `pages/invoices/FC/` |
+| `INVOICE_SALE` | `invoice-sale` | `pages/invoices/FV/` |
+| `PURCHASE_ORDERS` | `purchase-orders` | `pages/invoices/OC/` |
 
-### 11.1 Menú dinámico
+`FormInvoice` acepta `thirdPartyRoleId`, `loadAllProducts` (FV).
 
-1. `getMenu()` llama `GET /api/modules/menu`.
-2. Construye árbol con `buildMenuTree`.
-3. `routes.jsx` genera `<Route>` por cada ítem con `componentName`.
+`LineInvoices` — columnas precio venta/stock; tope cantidad en FV.
 
-### 11.2 Registrar un componente
+### 11.4 Comprobantes (frontend)
 
-En `utils/map_menu.jsx`:
+| Archivo | Rol |
+|---------|-----|
+| `pages/vouchers/index.jsx` | Listado + modales |
+| `VoucherFormModal.jsx` | Formulario principal |
+| `AccountingLinesEditor.jsx` | Editor de líneas |
+| `AccountingLineRow.jsx` | Fila con InputSelectModal |
+| `voucherUtils.js` | Validación cliente |
 
-```javascript
-import MiPantalla from "../pages/mi-modulo/index";
+### 11.5 Componente InputSelectModal
 
-// Dentro de COMPONENT_MAP:
-{ id: "MI_COMPONENTE", name: "Mi pantalla", component: MiPantalla },
-```
+- Ubicación: `components/molecules/inputSelectModal.jsx`.
+- Envuelve **Select2** (jQuery).
+- Props: `id`, `options`, `value`, `onChange`, `disabled`, `url` (ajax opcional).
+- En modales Bootstrap: `dropdownParent: $select.parent()`.
 
-El `component` en BD (tabla `menus`) debe coincidir con `id` en `COMPONENT_MAP`.
-
-### 11.3 Rutas anidadas
-
-`renderMenuRoutesFlat` concatena `parentPath` + `menu.path` para URLs como `/cash-and-banks/bank-accounts`.
-
----
-
-## 12. Frontend — consumo del API
-
-### 12.1 fetchHelper
+### 11.6 Consumo API
 
 ```javascript
 import { fetchHelper } from '@/utils/fetch';
 import { base_url } from '@/utils/functions';
 
-// GET con token
-await fetchHelper.get(base_url(['api', 'v1', 'vouchers', id]), {}, 0, false);
-
-// POST
-await fetchHelper.post(base_url(['api', 'v1', 'vouchers', 'create']), payload, {}, 0, false);
-```
-
-- `time = 0` desactiva overlay Swal de carga.
-- `showErrorAlert = false` evita alerta automática (manejo manual).
-- Token: `localStorage.getItem('token')` automático.
-
-### 12.2 DataTable con servidor
-
-```javascript
-<DataTableReference
-  url_api={['api', 'v1', 'vouchers', 'search']}
-  columns={columns}
-  tableRef={tableRef}
-  dataTableRef={dataTableRef}
-  buttons={buttons}
-/>
-```
-
-### 12.3 Permisos en UI
-
-```javascript
-const userPermissions = user.permissions?.filter(p => p.code.includes('VOUCHER')) || [];
-const canCreate = userPermissions.includes('CREATE_VOUCHER') || user.isAdmin;
-```
-
-Los códigos en el objeto `user` del login **no** llevan prefijo `PERM_`.
-
----
-
-## 13. Agregar un nuevo módulo
-
-### Checklist backend
-
-1. Crear paquete `com.sigcon.backend.{modulo}` con `model`, `repository`, `service`, `interfaces`.
-2. Definir entidad JPA y repositorio.
-3. Implementar servicio con reglas y `UserUtil` para empresa.
-4. Exponer controller bajo `/api/v1/{recurso}`.
-5. Anotar con `@PreAuthorize` y permisos nuevos.
-6. Insertar permisos y menú en `db/seeds` o migración SQL.
-7. Documentar en Swagger con `@Operation`.
-
-### Checklist frontend
-
-1. Crear `pages/{modulo}/index.jsx` (y formularios si aplica).
-2. Registrar en `COMPONENT_MAP`.
-3. Insertar menú en BD con `component` igual al `id` del mapa.
-4. Asignar permisos al rol vía UI de parametrización o seed.
-5. Probar flujo completo con usuario sin SUPERADMIN.
-
----
-
-## 14. Asistente IA
-
-| Archivo / ruta | Rol |
-|----------------|-----|
-| `assistant/config/AssistantProperties` | `OPENAI_API_KEY`, modelo, URL |
-| `assistant/domain/service/AssistantContextService` | Prompt + KPIs sesión |
-| `assistant/domain/client/OpenAiChatClient` | Llamada HTTP OpenAI |
-| `assistant/interfaces/AssistantController` | `/api/v1/assistant/*` |
-| `Frontend/.../AssistantChat.jsx` | Widget flotante |
-
-Variables (`application.properties`):
-
-```properties
-app.assistant.api-key=${OPENAI_API_KEY:}
-app.assistant.model=${OPENAI_MODEL:gpt-4o-mini}
+await fetchHelper.post(
+  base_url(['api', 'v1', 'vouchers', 'create']),
+  payload,
+  {},
+  0,
+  false
+);
 ```
 
 ---
 
-## 15. Tests y calidad
+## 12. Verificación y validación
+
+Alineado con IEEE 1012 (resumen aplicable al proyecto).
+
+| Actividad | Método | Responsable |
+|-----------|--------|-------------|
+| Prueba unitaria backend | `mvn test` | Desarrollador |
+| Prueba de integración API | Swagger / Postman | Desarrollador |
+| Prueba UI | Casos del manual de usuario | QA / equipo |
+| Validación contable | Cuadre D=C en asientos | Contador revisor |
+
+**Casos críticos:**
+
+| ID caso | Descripción |
+|---------|-------------|
+| TC-V-01 | Crear comprobante nómina con 2+ líneas D/C y neto = monto |
+| TC-FV-01 | FV reduce stock; error si stock insuficiente |
+| TC-FC-01 | FC incrementa stock y actualiza precio compra |
+| TC-P-01 | Pago FC genera asiento sin líneas manuales |
+
+---
+
+## 13. Despliegue y operación
+
+### 13.1 Desarrollo local
 
 ```powershell
+# Docker (recomendado)
+docker compose -f docker-compose.local.yml --env-file backend/.env up --build -d
+
+# Backend
 cd backend
-.\mvnw.cmd test
-.\mvnw.cmd -Dspring.profiles.active=dev test
-```
+$env:SPRING_PROFILES_ACTIVE = "dev"
+.\mvnw.cmd spring-boot:run
 
-Frontend:
-
-```bash
+# Frontend
 cd Frontend
-npm run lint
-npm run build   # verifica compilación
+npm install && npm run dev
 ```
 
-Recomendaciones:
+### 13.2 URLs locales
 
-- Probar endpoints críticos en Swagger antes del PR.
-- Validar permisos con usuario no administrador.
-- Verificar que asientos cuadren (débito = crédito) en comprobantes manuales.
+| Servicio | URL |
+|----------|-----|
+| API | http://localhost:8080 |
+| Swagger | http://localhost:8080/swagger-ui.html |
+| Frontend | http://localhost:5173 |
+
+### 13.3 Producción
+
+- `mvn -DskipTests package` → JAR.
+- `npm run build` → `dist/` + Nginx.
+- Variables: JWT, BD, CORS, `OPENAI_API_KEY` (opcional).
+- Desactivar Swagger fuera de `dev`.
 
 ---
 
-## 16. Despliegue
+## 14. Mantenimiento y extensión
 
-### Backend
+### 14.1 Checklist nuevo módulo backend
 
-```powershell
-.\mvnw.cmd -DskipTests clean package
-java -jar target/backend-0.0.1-SNAPSHOT.jar
-```
+1. Paquete `com.sigcon.backend.{modulo}`.
+2. Entity, Repository, Service, Controller.
+3. `@PreAuthorize` + permisos en seed/migración.
+4. `@Operation` Swagger.
 
-O imagen Docker (`backend/Dockerfile`).
+### 14.2 Checklist nuevo módulo frontend
 
-### Frontend
+1. `pages/{modulo}/`.
+2. Entrada en `COMPONENT_MAP`.
+3. Menú en SQL (`menus`, `menu_permissions`).
+4. Probar con usuario sin SUPERADMIN.
 
-```bash
-npm run build
-```
+### 14.3 Agregar tipo de comprobante
 
-Artefacto en `dist/`. Servir con Nginx (`Frontend/docker-compose` modo producción).
-
-Variables importantes producción:
-
-- `SPRING_PROFILES_ACTIVE` sin exposición de Swagger
-- `FRONTEND_URL`, `CORS_ALLOWED_ORIGINS`
-- Secretos JWT y BD fuera del repositorio
+1. Seed `voucher_types`.
+2. Reglas en `VoucherAccountingAccountFilterService`.
+3. Flag `requiresManualAccountingLines` si aplica.
+4. Actualizar `voucherUtils.js` (`STANDALONE_VOUCHER_TYPES`).
 
 ---
 
-## 17. Solución de problemas
+## 15. Trazabilidad
 
-| Síntoma | Verificación |
-|---------|----------------|
-| 401 en todas las peticiones | Token expirado, header Authorization, blacklist |
-| 403 en un módulo | Permiso faltante en rol; authority `PERM_{code}` |
-| Menú vacío tras login | `GET /api/modules/menu`, permisos de menú, `COMPONENT_MAP` |
-| Swagger no carga | Perfil `dev`, `SecurityConfig` permite `/swagger-ui/**` |
-| CORS | `CORS_ALLOWED_ORIGINS` y configuración en `SecurityConfig` |
-| Asiento no cuadra | `validateManualAccountingLines`, filtro de cuentas |
-| Periodo cerrado | `AccountingPeriodStatus.CLOSED` en `DiaryBook` |
+Matriz simplificada requisito ↔ implementación (IEEE 29148 / 1016).
 
-Logs backend (dev):
+| ID requisito | Descripción | Módulo | Artefacto verificación |
+|--------------|-------------|--------|------------------------|
+| REQ-FAC-01 | Factura de compra | invoices/FC | TC-FC-01 |
+| REQ-FAC-02 | Factura de venta | invoices/FV | TC-FV-01 |
+| REQ-INV-01 | Control de stock | products, LineInvoiceService | TC-FV-01, TC-FC-01 |
+| REQ-VCH-01 | Comprobantes standalone | vouchers | TC-V-01 |
+| REQ-VCH-02 | Filtro cuentas por tipo | VoucherAccountingAccountFilterService | TC-V-01 |
+| REQ-SEG-01 | Autenticación JWT | general/security | Login manual |
+| REQ-RPT-01 | Reportes contables | books/reports | Manual §7.10 |
 
-```properties
-logging.level.com.sigcon.backend=DEBUG
+---
+
+## Apéndice A — Mapa de paquetes backend
+
+```
+com.sigcon.backend/
+├── parametrization/
+├── lists_accounting/
+├── third_parties/
+├── invoices/
+├── vouchers/
+├── accounting_entry/
+├── books/
+├── banks/
+├── assets/
+├── products/
+├── dashboard/
+├── assistant/
+├── general/          # Security, config
+└── utils/            # UserUtil, DataTable, JSON responses
 ```
 
 ---
 
-## 18. Referencias
+## Apéndice B — Endpoints principales
 
-| Documento | Ubicación |
-|---------|-----------|
-| README general | [../README.md](../README.md) |
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/auth/login` | Autenticación |
+| GET | `/api/modules/menu` | Menú por rol |
+| POST | `/api/v1/vouchers/search` | Listado comprobantes |
+| POST | `/api/v1/vouchers/create` | Crear comprobante |
+| POST | `/api/v1/vouchers/accounting-accounts/filter` | Cuentas permitidas |
+| POST | `/api/v1/invoices/fc/create` | Factura compra |
+| POST | `/api/v1/invoices/fv/create` | Factura venta |
+| GET | `/api/v1/invoices/{id}/pdf` | PDF factura |
+| POST | `/api/v1/products/create` | Producto |
+| GET | `/api/v1/dashboard/overview` | Dashboard |
+| POST | `/api/v1/assistant/chat` | Asistente IA |
+
+Listado completo: Swagger en entorno `dev`.
+
+---
+
+## Referencias cruzadas
+
+| Documento | Enlace |
+|-----------|--------|
+| Documentación general | [DOCUMENTACION_GENERAL.md](DOCUMENTACION_GENERAL.md) |
 | Manual de usuario | [MANUAL_USUARIO.md](MANUAL_USUARIO.md) |
-| Backend (instalación) | [../backend/readme.md](../backend/readme.md) |
-| Frontend (Docker) | [../Frontend/README.md](../Frontend/README.md) |
-| Swagger | http://localhost:8080/swagger-ui.html (dev) |
-
-Repositorios históricos:
-
-- https://github.com/WilliamsBD8/sigcon-backend
-- https://github.com/WilliamsBD8/sigcon-frontend
+| README | [../README.md](../README.md) |
+| Backend readme | [../backend/readme.md](../backend/readme.md) |
 
 ---
 
-*Documento mantenido por el equipo de desarrollo SIGCON — USCO 2026-1.*
+*Fin del documento SIGCON-SDD-001.*

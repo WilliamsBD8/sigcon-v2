@@ -21,7 +21,8 @@ services:
       LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB: DEBUG
       LOGGING_LEVEL_COM_SIGCON_BACKEND: DEBUG
       SPRING_PROFILES_ACTIVE: dev  
-
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL}
     deploy:
       resources:
         limits:

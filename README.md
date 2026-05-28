@@ -2,7 +2,9 @@
 
 SIGCON es una aplicación web para la gestión contable, financiera y operativa de empresas. Integra facturación, comprobantes, tesorería (bancos y caja), activos fijos, terceros, listas contables (PUC), reportes y un asistente con IA contextualizado por sesión.
 
-Proyecto desarrollado en el marco del **Proyecto Integrador** (USCO, 2026-1), con arquitectura **hexagonal (Ports & Adapters)** en backend y frontend organizado por capas.
+Proyecto desarrollado en el marco del **Proyecto Integrador 4** (USCO, Ingeniería de Sistemas, 2026-1), con arquitectura **hexagonal (Ports & Adapters)** en backend y frontend organizado por capas.
+
+> **Documentación completa:** [docs/DOCUMENTACION_GENERAL.md](docs/DOCUMENTACION_GENERAL.md) — visión, alcance, módulos, instalación e índice de todos los manuales.
 
 ---
 
@@ -16,6 +18,7 @@ Proyecto desarrollado en el marco del **Proyecto Integrador** (USCO, 2026-1), co
 - [Inicio rápido con Docker](#inicio-rápido-con-docker)
 - [Desarrollo local](#desarrollo-local)
 - [Variables de entorno](#variables-de-entorno)
+- [Documentación general](#documentación-general)
 - [Documentación de la API](#documentación-de-la-api)
 - [Asistente con IA (opcional)](#asistente-con-ia-opcional)
 - [Tests](#tests)
@@ -31,7 +34,7 @@ Proyecto desarrollado en el marco del **Proyecto Integrador** (USCO, 2026-1), co
 |--------|-------------|
 | **Parametrización** | Usuarios, roles, permisos, empresas, menús y módulos |
 | **Listas contables** | PUC, cuentas contables, centros de costo, reglas tributarias, tasas de cambio |
-| **Facturación** | Facturas de compra (FC), órdenes de compra (OC), pagos vinculados |
+| **Facturación** | Facturas de compra (FC), venta (FV), órdenes (OC), pagos e inventario |
 | **Comprobantes** | Egresos/ingresos con asiento automático o manual según tipo |
 | **Tesorería** | Bancos, cuentas, chequeras, cheques, caja, conciliación |
 | **Activos fijos** | Registro, depreciación, bajas, kardex, alertas NIIF |
@@ -94,9 +97,28 @@ Proyecto desarrollado en el marco del **Proyecto Integrador** (USCO, 2026-1), co
 │   ├── src/pages/           # Vistas por módulo
 │   ├── src/components/      # Componentes UI
 │   └── README.md            # Documentación del frontend
-├── docker-compose.local.yml # Orquestación local (API + DB + frontend)
-└── README.md                # Este archivo
+├── docs/
+│   ├── DOCUMENTACION_GENERAL.md  # Visión, alcance, módulos, índice
+│   ├── MANUAL_USUARIO.md
+│   └── MANUAL_DESARROLLADOR.md
+├── docker-compose.local.yml # Orquestación local (API + BD + frontend)
+└── README.md                # Inicio rápido (este archivo)
 ```
+
+---
+
+## Documentación general
+
+Documento maestro: **[docs/DOCUMENTACION_GENERAL.md](docs/DOCUMENTACION_GENERAL.md)** (SIGCON-DOC-000).
+
+| ¿Quién eres? | Empieza aquí |
+|--------------|--------------|
+| Usuario del sistema | [Manual de usuario](docs/MANUAL_USUARIO.md) |
+| Desarrollador | [Manual de desarrollador](docs/MANUAL_DESARROLLADOR.md) |
+| Docente / evaluador | [Documentación general](docs/DOCUMENTACION_GENERAL.md) |
+| Instalación rápida | [Inicio rápido con Docker](#inicio-rápido-con-docker) (abajo) |
+
+Incluye objetivos, alcance, catálogo de módulos, flujos FC/FV/comprobantes, instalación, seguridad e índice IEEE completo.
 
 ---
 
@@ -236,12 +258,13 @@ Con perfil dev:
 
 ## Documentación
 
-| Documento | Audiencia | Enlace |
-|-----------|-----------|--------|
-| Manual de usuario | Contadores, tesoreros, operadores | [docs/MANUAL_USUARIO.md](docs/MANUAL_USUARIO.md) |
-| Manual de desarrollador | Desarrolladores y administradores técnicos | [docs/MANUAL_DESARROLLADOR.md](docs/MANUAL_DESARROLLADOR.md) |
-| Backend (instalación) | DevOps / backend | [backend/readme.md](backend/readme.md) |
-| Frontend (Docker) | DevOps / frontend | [Frontend/README.md](Frontend/README.md) |
+| Documento | ID | Estándar IEEE | Audiencia | Enlace |
+|-----------|-----|---------------|-----------|--------|
+| **Documentación general** | SIGCON-DOC-000 | 1058, 1016 | Todos / evaluadores | [docs/DOCUMENTACION_GENERAL.md](docs/DOCUMENTACION_GENERAL.md) |
+| Manual de usuario | SIGCON-MUD-001 | 1063, 26515 | Contadores, tesoreros, operadores | [docs/MANUAL_USUARIO.md](docs/MANUAL_USUARIO.md) |
+| Manual de desarrollador (SDD) | SIGCON-SDD-001 | 1016, 26512, 1012 | Desarrolladores, arquitectos | [docs/MANUAL_DESARROLLADOR.md](docs/MANUAL_DESARROLLADOR.md) |
+| Backend (instalación) | — | — | DevOps / backend | [backend/readme.md](backend/readme.md) |
+| Frontend (Docker) | — | — | DevOps / frontend | [Frontend/README.md](Frontend/README.md) |
 
 ---
 

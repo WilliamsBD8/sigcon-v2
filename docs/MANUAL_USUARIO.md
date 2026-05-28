@@ -1,373 +1,483 @@
-# Manual de usuario — SIGCON
+# Manual de usuario del software SIGCON
 
-**Sistema de Gestión Contable y Financiera**  
-Versión documentada: 2026-1 · Proyecto Integrador — USCO
+| Campo | Valor |
+|-------|--------|
+| **Identificación del documento** | SIGCON-MUD-001 |
+| **Título** | Manual de usuario |
+| **Producto** | SIGCON — Sistema de Gestión Contable y Financiera |
+| **Versión del documento** | 1.1 |
+| **Versión del producto** | 2026-1 (Proyecto Integrador USCO) |
+| **Fecha** | 2026-05-28 |
+| **Clasificación** | Uso operativo |
+| **Estándar de referencia** | IEEE Std 1063-2001, IEEE Std 26515-2018 |
+
+---
+
+## Historial de revisiones
+
+| Versión | Fecha | Autor / equipo | Descripción |
+|---------|--------|----------------|-------------|
+| 1.0 | 2026-05 | Equipo SIGCON | Versión inicial operativa |
+| 1.1 | 2026-05-28 | Equipo SIGCON | Estructura IEEE; FV, comprobantes standalone, inventario |
 
 ---
 
 ## Tabla de contenidos
 
-1. [Introducción](#1-introducción)
-2. [Requisitos y acceso](#2-requisitos-y-acceso)
-3. [Interfaz general](#3-interfaz-general)
-4. [Dashboard](#4-dashboard)
-5. [Parametrización](#5-parametrización)
-6. [Listas contables](#6-listas-contables)
-7. [Terceros](#7-terceros)
-8. [Tesorería (cajas y bancos)](#8-tesorería-cajas-y-bancos)
-9. [Facturación](#9-facturación)
-10. [Comprobantes contables](#10-comprobantes-contables)
-11. [Activos fijos](#11-activos-fijos)
-12. [Reportes contables](#12-reportes-contables)
-13. [Asistente con IA](#13-asistente-con-ia)
-14. [Permisos y visibilidad de menús](#14-permisos-y-visibilidad-de-menús)
-15. [Mensajes de error frecuentes](#15-mensajes-de-error-frecuentes)
-16. [Buenas prácticas](#16-buenas-prácticas)
+1. [Alcance y aplicabilidad](#1-alcance-y-aplicabilidad)
+2. [Referencias normativas e informativas](#2-referencias-normativas-e-informativas)
+3. [Definiciones, acrónimos y abreviaturas](#3-definiciones-acrónimos-y-abreviaturas)
+4. [Descripción general del sistema](#4-descripción-general-del-sistema)
+5. [Requisitos del entorno de uso](#5-requisitos-del-entorno-de-uso)
+6. [Inicio de sesión y navegación](#6-inicio-de-sesión-y-navegación)
+7. [Procedimientos por módulo](#7-procedimientos-por-módulo)
+8. [Mensajes, errores y recuperación](#8-mensajes-errores-y-recuperación)
+9. [Seguridad, permisos y buenas prácticas](#9-seguridad-permisos-y-buenas-prácticas)
+10. [Soporte](#10-soporte)
+- [Apéndice A — Matriz de permisos frecuentes](#apéndice-a--matriz-de-permisos-frecuentes)
+- [Apéndice B — Tipos de comprobante y cuentas](#apéndice-b--tipos-de-comprobante-y-cuentas)
 
 ---
 
-## 1. Introducción
+## 1. Alcance y aplicabilidad
 
-SIGCON permite a su empresa registrar operaciones contables y financieras en un solo lugar: catálogo PUC, cuentas auxiliares, facturas, pagos, comprobantes con asiento contable, bancos, caja, activos fijos y reportes.
+### 1.1 Propósito
 
-Cada usuario ve únicamente los módulos y acciones autorizados por su rol. Los datos mostrados (facturas, saldos, KPIs) corresponden a la **empresa asociada** a su usuario, salvo perfiles de administración global.
+Este documento describe, para el **usuario final** y el **usuario administrador**, cómo utilizar SIGCON para registrar y consultar operaciones contables y financieras de una empresa.
 
----
+### 1.2 Alcance del producto
 
-## 2. Requisitos y acceso
+SIGCON cubre, entre otros:
 
-### 2.1 Navegador recomendado
+- Parametrización (usuarios, roles, empresas, menús).
+- Listas contables (PUC, cuentas auxiliares, impuestos, tasas de cambio).
+- Terceros (clientes, proveedores, empleados).
+- Tesorería (cajas, bancos, cheques, conciliación).
+- Facturación: órdenes de compra (OC), facturas de compra (FC), **facturas de venta (FV)**.
+- Comprobantes contables (con y sin factura).
+- Activos fijos, productos e inventario (stock).
+- Reportes contables y dashboard.
+- Asistente con IA (opcional).
 
-- Google Chrome, Microsoft Edge o Firefox (versiones recientes).
-- JavaScript habilitado.
-- Conexión estable a la red donde esté desplegado el sistema.
+### 1.3 Audiencia prevista
 
-### 2.2 Inicio de sesión
+| Perfil | Uso de este manual |
+|--------|-------------------|
+| Contador / auxiliar contable | Facturas, comprobantes, reportes |
+| Tesorero | Cajas, bancos, cheques, pagos |
+| Administrador de activos | Activos, depreciación, productos |
+| Administrador del sistema | Parametrización, roles, permisos |
 
-1. Abra la URL proporcionada por su administrador (por ejemplo `http://localhost:5173` en desarrollo).
-2. En la pantalla de **Inicio de sesión**, ingrese:
-   - **Correo o usuario**
-   - **Contraseña**
-3. Pulse **Iniciar sesión**.
+### 1.4 Organización del documento
 
-Si las credenciales son correctas, el sistema guarda la sesión y redirige al **Dashboard**.
-
-### 2.3 Recuperar contraseña
-
-1. En el login, seleccione **¿Olvidó su contraseña?**
-2. Ingrese el correo registrado.
-3. Revise su bandeja de entrada y siga el enlace para restablecer la contraseña.
-
-### 2.4 Cerrar sesión
-
-Use la opción de cerrar sesión en el menú de usuario (esquina superior). Si el token expira, el sistema solicitará iniciar sesión nuevamente.
+Los capítulos 6–7 siguen un enfoque **orientado a tareas** (recomendado en IEEE 1063): cada sección indica objetivo, precondiciones, pasos y resultado esperado.
 
 ---
 
-## 3. Interfaz general
+## 2. Referencias normativas e informativas
+
+| ID | Documento | Relación |
+|----|-----------|----------|
+| [R1] | IEEE Std 1063-2001 | Estructura de documentación de usuario de software |
+| [R2] | IEEE Std 26515-2018 | Elaboración de documentación para usuarios en entornos ágiles |
+| [R3] | Manual de desarrollador SIGCON (`MANUAL_DESARROLLADOR.md`) | Detalle técnico, API, despliegue |
+| [R4] | README del proyecto (`../README.md`) | Instalación y arquitectura general |
+| [R5] | Decreto 2420 de 2015 (PUC Colombia) | Marco del catálogo contable (referencia de negocio) |
+
+---
+
+## 3. Definiciones, acrónimos y abreviaturas
+
+| Término | Definición |
+|---------|------------|
+| **Asiento contable** | Registro de débitos y créditos que debe cuadrar (partida doble). |
+| **Comprobante** | Documento que registra un movimiento de tesorería y su contrapartida contable. |
+| **FC** | Factura de compra (obligación con proveedor). |
+| **FV** | Factura de venta (ingreso con cliente). |
+| **OC** | Orden de compra (documento previo en flujo comercial). |
+| **PUC** | Plan Único de Cuentas. |
+| **Tercero** | Persona natural o jurídica (cliente, proveedor, empleado, etc.). |
+| **Periodo contable** | Intervalo (mes/año) en el que se permiten movimientos. |
+| **Stock** | Cantidad disponible de un producto en inventario. |
+| **Precio de compra / venta** | Valor unitario de referencia en catálogo; puede actualizarse al facturar. |
+
+| Acrónimo | Significado |
+|----------|-------------|
+| COP | Peso colombiano |
+| JWT | Token de sesión (uso interno; el usuario solo inicia sesión) |
+| KPI | Indicador clave en dashboard |
+| NIIF | Normas Internacionales de Información Financiera |
+
+---
+
+## 4. Descripción general del sistema
+
+### 4.1 Arquitectura desde la perspectiva del usuario
+
+El usuario accede mediante un **navegador web** a la aplicación React. Todas las operaciones se validan en un servidor central; los datos pertenecen a la **empresa** asignada al usuario (salvo perfiles globales).
+
+```
+  Usuario → Navegador (SIGCON Web) → Servidor → Base de datos empresarial
+```
+
+### 4.2 Módulos funcionales
+
+| Módulo | Función principal |
+|--------|-------------------|
+| Dashboard | Resumen de indicadores |
+| Parametrización | Usuarios, roles, empresas, menús |
+| Listas contables | PUC, cuentas, impuestos, depreciación |
+| Terceros | Clientes, proveedores, empleados |
+| Tesorería | Cajas, bancos, cheques |
+| Facturas | OC, FC, FV, pagos |
+| Comprobantes | Nómina, servicios, ajustes |
+| Activos / productos | Activos fijos e inventario |
+| Reportes | Libros y estados |
+
+### 4.3 Convenciones de la interfaz
 
 | Elemento | Descripción |
 |----------|-------------|
-| **Menú lateral** | Módulos agrupados (Parametrización, Listas contables, Activos, etc.). Solo aparecen opciones autorizadas. |
-| **Barra superior** | Usuario, empresa y accesos rápidos. |
-| **Área de contenido** | Tablas, formularios y reportes del módulo activo. |
-| **Botón flotante (chat)** | Abre el **Asistente SIGCON** (esquina inferior derecha), si está habilitado. |
-
-### Convenciones en tablas
-
-- **Buscar / filtrar**: caja de búsqueda y, en algunos módulos, botón de filtros avanzados.
-- **Exportar**: menú **Opciones** → exportar a Excel/PDF según módulo.
-- **Acciones por fila**: iconos de ver, editar o eliminar (según permisos).
-- **Crear**: botón principal (por ejemplo *Nuevo*, *Registrar*, *Emitir*).
+| Menú lateral | Módulos autorizados por rol |
+| Tablas | Búsqueda, paginación, exportación (según pantalla) |
+| Botón crear | Alta de registros |
+| Iconos por fila | Ver, editar, eliminar (según permiso) |
+| Listas desplegables | Componente con búsqueda (Select2) |
+| Chat flotante | Asistente IA (si está habilitado) |
 
 ---
 
-## 4. Dashboard
+## 5. Requisitos del entorno de uso
 
-Al ingresar verá un resumen con indicadores de su empresa:
+### 5.1 Hardware y software cliente
 
-- Cantidad de facturas, comprobantes, activos, cuentas bancarias y usuarios.
-- Montos totales de facturas, comprobantes y saldo bancario consolidado.
-- Gráficos de tendencia mensual (facturas y comprobantes).
+- PC o portátil con navegador actualizado (Chrome, Edge o Firefox).
+- JavaScript habilitado.
+- Resolución mínima recomendada: 1366×768.
 
-Los usuarios con perfil de **administración global** pueden ver indicadores de todas las empresas.
+### 5.2 Conectividad
 
----
+- Acceso a la URL provista por el administrador (red local o VPN según despliegue).
 
-## 5. Parametrización
+### 5.3 Cuentas y credenciales
 
-> Módulo orientado a administradores del sistema.
-
-| Función | Uso habitual |
-|---------|----------------|
-| **Usuarios** | Crear usuarios, asignar empresa, roles y estado. |
-| **Roles** | Definir perfiles (contador, tesorero, etc.) y permisos. |
-| **Permisos** | Catálogo de acciones del sistema (crear, ver, editar, eliminar). |
-| **Empresas** | Datos legales, NIT, moneda, representante. |
-| **Módulos y menús** | Estructura de navegación y componentes de pantalla. |
-| **Permisos de menú** | Qué roles ven cada ítem del menú. |
-| **Parámetros** | Valores generales de configuración. |
-| **Perfil** | Datos del usuario conectado (nombre, avatar, contraseña). |
-
-**Recomendación:** no elimine roles o permisos en uso sin revisar usuarios asignados.
+- Correo o usuario y contraseña asignados por el administrador.
+- No compartir credenciales entre personas.
 
 ---
 
-## 6. Listas contables
+## 6. Inicio de sesión y navegación
 
-Base del catálogo contable de la empresa.
+### 6.1 Procedimiento: iniciar sesión
 
-### 6.1 Catálogo PUC
+| Paso | Acción | Resultado esperado |
+|------|--------|------------------|
+| 1 | Abrir la URL del sistema | Pantalla de login |
+| 2 | Ingresar correo y contraseña | Campos validados |
+| 3 | Pulsar **Iniciar sesión** | Redirección al Dashboard |
 
-Consulta y mantenimiento del Plan Único de Cuentas (código, nombre, clase, nivel, naturaleza).
+**Precondiciones:** usuario activo y permisos asignados.
 
-### 6.2 Cuentas contables
+### 6.2 Procedimiento: recuperar contraseña
 
-Crea cuentas auxiliares vinculadas al PUC para su empresa:
+1. En login, seleccione **¿Olvidó su contraseña?**
+2. Ingrese el correo registrado.
+3. Siga el enlace recibido por correo.
 
-- Nombre personalizado.
-- Moneda y centro de costo (opcional).
-- Naturaleza débito/crédito y estado activo/inactivo.
+### 6.3 Procedimiento: cerrar sesión
 
-### 6.3 Centros de costo
+Use la opción de cierre de sesión en el menú de usuario (barra superior).
 
-Segmentación analítica para imputar gastos e ingresos.
+### 6.4 Navegación por módulos
 
-### 6.4 Reglas tributarias y tasas de cambio
-
-- **Reglas tributarias:** configuración de impuestos aplicables a cuentas o operaciones.
-- **Tasas de cambio:** valores de conversión entre monedas.
-- **Tipos de moneda:** catálogo de monedas (COP, USD, etc.).
-
-### 6.5 Reglas de depreciación
-
-Parámetros para el cálculo automático de depreciación de activos.
+Solo se muestran ítems del menú autorizados. Si falta un módulo, contacte al administrador (véase capítulo 9).
 
 ---
 
-## 7. Terceros
+## 7. Procedimientos por módulo
 
-Gestión de **proveedores, clientes** y otros terceros.
+### 7.1 Dashboard
 
-| Pantalla | Acción |
-|----------|--------|
-| **Lista de terceros** | Alta, edición, consulta por NIT, ciudad, segmento. |
-| **Segmentación** | Clasificación comercial o contable de terceros. |
+**Objetivo:** consultar indicadores de la empresa.
 
-Los terceros se usan al crear facturas de compra u órdenes de venta.
+**Pasos:** ingresar al sistema → Dashboard.
 
----
-
-## 8. Tesorería (cajas y bancos)
-
-### 8.1 Cajas
-
-Registro de puntos de efectivo (caja menor, caja general) con cuenta contable asociada.
-
-### 8.2 Bancos y sucursales
-
-- **Catálogo de bancos:** entidades financieras.
-- **Sucursales:** oficinas por banco (acceso desde el detalle del banco).
-
-### 8.3 Cuentas bancarias
-
-Alta de cuentas corriente, ahorro o tarjeta con:
-
-- Banco y número de cuenta.
-- Cuenta contable del activo (clase ACTIVO, prefijos 11xx).
-- Saldo inicial y seguimiento de movimientos.
-
-### 8.4 Chequeras y cheques
-
-1. Cree la **chequera** ligada a una cuenta bancaria.
-2. **Emita cheques** con beneficiario, valor y concepto.
-3. Actualice estados: emitido, cobrado, anulado, extraviado.
-4. **Concilie** cheques con movimientos bancarios cuando corresponda.
-
-### 8.5 Conciliación bancaria
-
-Desde la cuenta bancaria puede comparar el extracto con los comprobantes del sistema y emparejar movimientos.
+**Resultado:** totales de facturas, comprobantes, activos, saldos bancarios y gráficos de tendencia.
 
 ---
 
-## 9. Facturación
+### 7.2 Parametrización (administradores)
 
-### 9.1 Órdenes de compra (OC)
-
-Documento previo a la factura de venta del cliente:
-
-1. **Listar** órdenes existentes.
-2. **Crear** con tercero (cliente), líneas de producto/servicio, totales e impuestos.
-3. **Editar** mientras el estado lo permita.
-
-### 9.2 Facturas de compra (FC)
-
-Registro de obligaciones con proveedores:
-
-1. Acceda a **Facturas de compra**.
-2. **Crear factura**: proveedor, fechas, líneas, retenciones, totales.
-3. Guarde; el sistema valida totales y estados.
-
-### 9.3 Pagos de factura
-
-Desde la factura (o menú de pagos):
-
-1. Abra **Pagos** / **Registrar pago**.
-2. Complete:
-   - **Monto** (no mayor al saldo pendiente).
-   - **Método de pago** (efectivo, cheque, cuenta bancaria, etc.).
-   - **Origen**: caja, banco o cheque según el método.
-   - **Fecha** y **descripción**.
-   - **Soporte** (archivo opcional).
-3. Guarde el comprobante.
-
-**Asiento automático en pagos de factura:**
-
-| Tipo de factura | Comprobante | Comportamiento contable |
-|-----------------|-------------|-------------------------|
-| FC (compra) | Pago (`PAYMENT`) | Débito proveedores (22xx) / Crédito banco o caja |
-| OC (venta) | Recibo (`RECEIPT`) | Débito banco o caja / Crédito cartera (13xx) |
-
-El sistema muestra un aviso indicando que el asiento se genera automáticamente; no debe capturar líneas manuales en este flujo.
+| Tarea | Ruta habitual | Notas |
+|-------|---------------|-------|
+| Gestionar usuarios | Parametrización → Usuarios | Asignar empresa y rol |
+| Gestionar roles | Parametrización → Roles | Vincular permisos |
+| Empresas | Parametrización → Empresas | NIT, moneda |
+| Menús y permisos de menú | Módulos / Menús | Visibilidad por rol |
 
 ---
 
-## 10. Comprobantes contables
+### 7.3 Listas contables
 
-Módulo para **ver y crear comprobantes** independientes de facturas (nómina, servicios, ajustes).
+**Objetivo:** mantener el catálogo contable base.
 
-### 10.1 Listado
-
-Muestra tipo, número, fecha, monto, descripción y factura vinculada (si aplica). Acciones: **ver**, **editar**, **eliminar** (según permisos).
-
-### 10.2 Crear comprobante
-
-1. Pulse **Nuevo comprobante**.
-2. Seleccione el **tipo de comprobante**:
-
-| Código | Nombre | Uso típico |
-|--------|--------|------------|
-| `PAYMENT` | Pago de compra | Pagos a proveedores (sin factura o vía módulo facturas) |
-| `RECEIPT` | Recibo de venta | Cobros de clientes |
-| `PAYROLL` | Pago de nómina | Salarios y prestaciones |
-| `SERVICE_PAYMENT` | Pago de servicio | Servicios contratados |
-| `SERVICE_RECEIPT` | Pago por prestación de servicios | Ingresos por servicios |
-
-3. Ingrese **monto**, **método de pago**, **origen** (caja/banco/cheque) y **fecha**.
-4. Si el tipo requiere **líneas contables manuales**, complete el bloque **Líneas contables** (ver tabla siguiente).
-5. Adjunte soporte si es necesario y guarde.
-
-### 10.3 Cuentas contables permitidas por tipo
-
-El sistema **filtra las cuentas** según el tipo de comprobante y si la línea es **Débito** o **Crédito**:
-
-| Tipo | Débito (cuentas sugeridas) | Crédito (cuentas sugeridas) |
-|------|----------------------------|-----------------------------|
-| Pago de compra / Pago servicio / Nómina | Pasivo (2xxx), gastos (5xxx, 6xxx, 7xxx) | Activos monetarios (11xx, 12xx) |
-| Recibo de venta / Ingreso servicios | Activos monetarios (11xx, 12xx) | Cartera (13xx), ingresos (4xxx), pasivo (2xxx) |
-
-Reglas:
-
-- Debe haber **al menos dos líneas** (débito y crédito).
-- **Total débito = total crédito = monto del comprobante**.
-- Solo aparecen cuentas **activas** de su empresa.
-
-### 10.4 Ver detalle
-
-Desde el listado, use el icono **Ver** para consultar el comprobante y su asiento sin modificarlo.
+1. **PUC:** consultar y mantener códigos del plan.
+2. **Cuentas contables:** crear auxiliares por empresa (código PUC, nombre, naturaleza).
+3. **Centros de costo, reglas tributarias, tasas de cambio:** según necesidad de la empresa.
+4. **Reglas de depreciación:** para el módulo de activos.
 
 ---
 
-## 11. Activos fijos
+### 7.4 Terceros
+
+**Objetivo:** registrar contrapartes comerciales.
+
+| Rol en catálogo | Uso en SIGCON |
+|-----------------|---------------|
+| PROVEEDOR | Facturas de compra (FC) |
+| CLIENTE | Facturas de venta (FV) |
+| EMPLEADO | Comprobantes de nómina |
+
+**Pasos típicos:** Terceros → Lista → Crear → completar NIT, razón social, ciudad, roles → Guardar.
+
+---
+
+### 7.5 Tesorería
+
+#### 7.5.1 Cajas y cuentas bancarias
+
+Registrar puntos de efectivo y cuentas bancarias con su **cuenta contable** asociada (clase activo, prefijos 11xx/12xx).
+
+#### 7.5.2 Chequeras y cheques
+
+1. Crear chequera ligada a cuenta bancaria.
+2. Emitir cheques (beneficiario, valor, estado).
+3. Conciliar con movimientos cuando corresponda.
+
+#### 7.5.3 Conciliación bancaria
+
+Desde la cuenta bancaria, compare extracto vs. movimientos del sistema y empareje partidas.
+
+---
+
+### 7.6 Facturación
+
+#### 7.6.1 Órdenes de compra (OC)
+
+**Objetivo:** documento previo en flujo de compras/ventas según configuración.
+
+**Pasos:** Facturas → Órdenes de compra → Crear → tercero, líneas, totales → Guardar.
+
+#### 7.6.2 Facturas de compra (FC)
+
+**Objetivo:** registrar compra a proveedor e incrementar inventario.
+
+| Paso | Acción |
+|------|--------|
+| 1 | Facturas de compra → Crear |
+| 2 | Seleccionar **proveedor**, fecha de compra |
+| 3 | Agregar **productos** (precio de compra, cantidad) |
+| 4 | Revisar totales → Guardar |
+
+**Efecto en inventario:** al guardar líneas, el **stock** del producto **aumenta** y puede actualizarse el **precio de compra** del catálogo.
+
+#### 7.6.3 Facturas de venta (FV)
+
+**Objetivo:** registrar venta a cliente y disminuir inventario.
+
+| Paso | Acción |
+|------|--------|
+| 1 | Facturas de venta → Crear |
+| 2 | Seleccionar **cliente**, fecha de venta |
+| 3 | Agregar productos (se sugiere **precio de venta** y **stock** disponible) |
+| 4 | La cantidad no puede superar el stock |
+| 5 | Guardar |
+
+**Efecto en inventario:** el **stock disminuye**; el **precio de venta** del producto puede actualizarse según el valor facturado.
+
+#### 7.6.4 Pagos de factura (FC / OC)
+
+**Objetivo:** registrar cobro o pago vinculado a factura.
+
+| Paso | Acción |
+|------|--------|
+| 1 | Abrir la factura → Pagos / Registrar pago |
+| 2 | Indicar monto (≤ saldo pendiente), método y origen (caja/banco/cheque) |
+| 3 | Adjuntar soporte si aplica → Guardar |
+
+**Asiento automático:**
+
+| Factura | Comprobante | Efecto contable resumido |
+|---------|-------------|--------------------------|
+| FC | Pago | Débito proveedores / Crédito banco o caja |
+| OC (cobro) | Recibo | Débito banco o caja / Crédito cartera |
+
+No capture líneas manuales en este flujo; el sistema genera el asiento.
+
+#### 7.6.5 Ver e imprimir factura
+
+- **Ver:** icono de consulta en el listado.
+- **PDF:** botón de descarga en la vista de detalle (si tiene permiso de visualización).
+
+---
+
+### 7.7 Comprobantes contables (sin factura)
+
+**Objetivo:** registrar nómina, pagos/recibos de servicios y otros movimientos **no** ligados a una factura del módulo de facturas.
+
+#### 7.7.1 Listar comprobantes
+
+Menú **Comprobantes contables** → tabla con tipo, número, fecha, monto, tercero.
+
+#### 7.7.2 Crear comprobante standalone
+
+| Paso | Acción |
+|------|--------|
+| 1 | **Nuevo comprobante** |
+| 2 | Tipo: `PAYROLL`, `SERVICE_PAYMENT` o `SERVICE_RECEIPT` |
+| 3 | Monto, método de pago, origen (caja/banco/cheque), fecha |
+| 4 | Si es **nómina:** seleccionar **empleado** (tercero rol EMPLEADO) |
+| 5 | **Líneas contables de contrapartida:** agregar una o más líneas |
+| 6 | En cada línea: **Tipo** (Débito/Crédito), **Cuenta** (sin 11/12), **Monto** |
+| 7 | Verificar que el **neto** de líneas manuales = monto del comprobante |
+| 8 | Guardar |
+
+**Reglas de cuadre (líneas manuales):**
+
+| Naturaleza del comprobante | Condición de cuadre |
+|----------------------------|---------------------|
+| Egreso (nómina, pago servicios) | Total débitos − total créditos = monto |
+| Ingreso (recibo servicios) | Total créditos − total débitos = monto |
+
+**Tesorería automática:** las cuentas **11/12** (banco/caja) **no** se capturan en líneas manuales; se generan al guardar según el método de pago indicado arriba.
+
+#### 7.7.3 Editar o consultar
+
+- **Ver:** modo solo lectura con todos los campos en listas desplegables.
+- **Editar:** según permisos y estado del comprobante.
+
+---
+
+### 7.8 Productos e inventario
+
+**Objetivo:** mantener catálogo con precios y existencias.
+
+| Campo | Descripción |
+|-------|-------------|
+| Precio de compra | Referencia para FC |
+| Precio de venta | Referencia para FV |
+| Stock inicial / actual | Existencias (movimientos por FC/FV) |
+
+**Pasos:** Inventario → Productos → Nuevo / Editar → completar datos → Guardar.
+
+---
+
+### 7.9 Activos fijos
 
 | Función | Descripción |
 |---------|-------------|
-| **Lista de activos** | Inventario de activos con placa, valor, vida útil, cuenta. |
-| **Crear / editar activo** | Alta y modificaciones. |
-| **Cálculo de depreciación** | Ejecución por periodo según reglas. |
-| **Bajas y transferencias** | Retiro o traslado de activos. |
-| **Kardex** | Historial de movimientos del activo. |
-| **Verificación / corrección NIIF** | Alertas y ajustes de cumplimiento. |
-| **Reporte de activos** | Informes exportables. |
-
-**Productos:** catálogo de ítems usados en facturas e inventario.
+| Registro de activos | Placa, valor, vida útil, cuenta |
+| Depreciación | Cálculo por periodo |
+| Bajas y transferencias | Retiro o traslado |
+| Kardex | Historial del activo |
+| NIIF | Verificación y corrección |
 
 ---
 
-## 12. Reportes contables
+### 7.10 Reportes contables
 
-Desde el módulo de reportes (según menú asignado):
+**Objetivo:** obtener informes por rango de fechas.
 
-| Reporte | Propósito |
-|---------|-----------|
-| **Balance de comprobación** | Saldos de cuentas en un rango de fechas. |
-| **Libro diario** | Movimientos cronológicos con débitos y créditos. |
-| **Libro mayor** | Movimientos por cuenta. |
-| **Auxiliares de cuenta** | Detalle por tercero o subcuenta. |
-| **Estados financieros** | Presentación agregada para análisis. |
+| Reporte | Uso |
+|---------|-----|
+| Balance de comprobación | Saldos por cuenta |
+| Libro diario | Cronológico de movimientos |
+| Libro mayor | Por cuenta |
+| Auxiliares | Detalle analítico |
+| Estados financieros | Vista agregada |
 
-Seleccione **empresa**, **rango de fechas** y filtros indicados en cada pantalla antes de generar o exportar.
-
----
-
-## 13. Asistente con IA
-
-Botón flotante (icono de chat) en la esquina inferior derecha.
-
-**Qué puede hacer:**
-
-- Responder preguntas sobre indicadores de su sesión (facturas, comprobantes, saldos).
-- Orientar en qué módulo realizar una tarea.
-
-**Limitaciones:**
-
-- No reemplaza criterio contable ni normativa vigente.
-- Los números provienen del contexto de su empresa al momento de la consulta.
-- Requiere que el administrador haya configurado el servicio de IA en el servidor.
-
-**Ejemplos de preguntas:**
-
-- «¿Cuántas facturas tiene registradas mi empresa?»
-- «¿Cuál es el saldo en cuentas bancarias?»
-- «¿Dónde registro un pago a proveedor?»
+**Pasos:** seleccionar empresa (si aplica), fechas, filtros → Generar / Exportar.
 
 ---
 
-## 14. Permisos y visibilidad de menús
+### 7.11 Asistente con IA
 
-- Si **no ve un módulo**, su rol no tiene permiso o el menú no está asignado: contacte al administrador.
-- Si una acción (crear, editar, eliminar) no aparece, falta el permiso correspondiente (por ejemplo `CREATE_VOUCHER`, `UPDATE_INVOICE_FC`).
-- El perfil **SUPERADMIN** tiene acceso amplio; los usuarios operativos suelen tener permisos acotados por área.
+**Objetivo:** orientación y consulta de indicadores de sesión.
 
----
+1. Pulse el botón de chat (esquina inferior derecha).
+2. Formule preguntas en lenguaje natural.
 
-## 15. Mensajes de error frecuentes
-
-| Mensaje | Causa probable | Qué hacer |
-|---------|----------------|-----------|
-| Sesión expirada | Token vencido | Vuelva a iniciar sesión. |
-| Permiso denegado | Sin autorización | Solicite permiso al administrador. |
-| Periodo contable no está abierto | Periodo cerrado | Abra el periodo en contabilidad o use fechas del periodo activo. |
-| El comprobante excede el total a pagar | Suma de pagos > factura | Reduzca el monto del pago. |
-| Debe registrar líneas contables | Comprobante sin asiento válido | Agregue débitos y créditos cuadrados. |
-| La cuenta no es válida para este tipo | Cuenta fuera del filtro | Elija otra cuenta de la lista filtrada. |
-| Sin conexión | Servidor no disponible | Verifique red y que el backend esté en ejecución. |
+**Limitaciones:** no sustituye criterio profesional ni normativa; requiere configuración del servicio en servidor.
 
 ---
 
-## 16. Buenas prácticas
+## 8. Mensajes, errores y recuperación
 
-1. **Cierre de periodo:** no registre comprobantes en periodos cerrados.
-2. **Soportes:** adjunte PDF o imagen en pagos y comprobantes relevantes.
-3. **Conciliación:** concilie bancos al menos una vez por periodo.
-4. **Terceros:** mantenga NIT y datos fiscales actualizados antes de facturar.
-5. **Respaldo:** los administradores deben respaldar la base de datos periódicamente.
-6. **Contraseñas:** no comparta credenciales; use contraseñas seguras.
+| Mensaje / situación | Causa probable | Acción del usuario |
+|---------------------|----------------|-------------------|
+| Sesión expirada | Token vencido | Volver a iniciar sesión |
+| Permiso denegado | Rol sin autorización | Solicitar permiso al administrador |
+| Periodo contable no abierto | Periodo cerrado | Usar fechas del periodo activo |
+| El comprobante excede el total a pagar | Pagos > factura | Ajustar monto del pago |
+| Neto de líneas debe igualar el monto | Asiento manual descuadrado | Revisar débitos y créditos |
+| Cuenta no válida para este tipo | Cuenta fuera de filtro | Elegir cuenta de la lista permitida |
+| Stock insuficiente (FV) | Cantidad > existencias | Reducir cantidad o reponer stock (FC) |
+| Sin conexión | Servidor no disponible | Verificar red; avisar a soporte |
 
 ---
 
-## Soporte
+## 9. Seguridad, permisos y buenas prácticas
 
-Para incidencias técnicas o solicitud de permisos, contacte al administrador del sistema o al equipo de desarrollo del Proyecto Integrador.
+### 9.1 Permisos
 
-Documentación técnica complementaria: [Manual de desarrollador](MANUAL_DESARROLLADOR.md) · [README del proyecto](../README.md)
+- La visibilidad del menú depende de **rol** y **permisos de menú**.
+- Las acciones (crear, editar, eliminar) dependen de códigos como `CREATE_VOUCHER`, `VIEW_INVOICE_FV`, etc.
+
+### 9.2 Buenas prácticas operativas
+
+1. No registrar movimientos en periodos cerrados.
+2. Adjuntar soportes en pagos y comprobantes relevantes.
+3. Conciliar bancos cada periodo.
+4. Mantener datos fiscales de terceros actualizados.
+5. Revisar stock tras compras (FC) y ventas (FV).
+
+---
+
+## 10. Soporte
+
+Para incidencias o solicitud de permisos: administrador del sistema o equipo de desarrollo del Proyecto Integrador USCO.
+
+Documentación complementaria: [Documentación general del proyecto](../docs/DOCUMENTACION_GENERAL.md) · [Manual de usuario](../docs/MANUAL_USUARIO.md) · [README del monorepo](../README.md)
+
+---
+
+## Apéndice A — Matriz de permisos frecuentes
+
+| Código (en perfil usuario) | Acción |
+|----------------------------|--------|
+| `CREATE_VOUCHER` | Crear comprobante |
+| `VIEW_INVOICE_FC` | Ver facturas de compra |
+| `CREATE_INVOICE_FV` | Crear factura de venta |
+| `UPDATE_INVOICE_FV` | Editar factura de venta |
+| `CREATE_PRODUCT` | Crear producto |
+| `VIEW_BANK_ACCOUNT` | Ver cuentas bancarias |
+
+*En el servidor, Spring Security usa el prefijo `PERM_` + código.*
+
+---
+
+## Apéndice B — Tipos de comprobante y cuentas
+
+| Código | Nombre | Líneas manuales | Tercero especial |
+|--------|--------|-----------------|------------------|
+| `PAYROLL` | Nómina | Sí (varias, D/C) | Empleado |
+| `SERVICE_PAYMENT` | Pago de servicio | Sí | — |
+| `SERVICE_RECEIPT` | Ingreso por servicios | Sí | — |
+| `PAYMENT` | Pago (con factura FC) | No (automático) | — |
+| `RECEIPT` | Recibo (con factura OC) | No (automático) | — |
+
+**Cuentas excluidas en líneas manuales standalone:** prefijos **11** y **12** (banco/caja); se registran por método de pago.
+
+---
+
+*Fin del documento SIGCON-MUD-001.*
