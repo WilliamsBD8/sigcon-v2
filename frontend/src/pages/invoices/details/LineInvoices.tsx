@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import DataTableReference from "@/components/organism/DataTable";
 import { useSelector } from "react-redux";
 import { adjustCurrency, formatPrice } from "@/utils/functions";
+import { uniqueId } from "lodash";
 
 interface Props {
     thirdParty: ThirdPartyInterface;
@@ -243,7 +244,7 @@ const LineInvoices = ({
             let lineInvoice = lineInvoices.find((i: LineInvoiceInterface) => i.productId == invoice?.productId);
             if(!product && !lineInvoice){
                 const item: LineInvoiceInterface = {
-                    id: crypto.randomUUID(),
+                    id: uniqueId(),
                     productId: invoice.productId,
                     asset: null,
                     product: null,
@@ -263,7 +264,7 @@ const LineInvoices = ({
                     ? (product.salePrice ?? product.price ?? 0)
                     : (product.price ?? 0);
                 const item: LineInvoiceInterface = {
-                    id: crypto.randomUUID(),
+                    id: uniqueId(),
                     productId: invoice.productId,
                     asset: null,
                     product: {
