@@ -1,0 +1,22 @@
+[
+    {
+        "code": "uk_consecutive_company_id_active",
+        "message": "Ya existe un asiento contable con el mismo número consecutivo y empresa."
+    },
+    {
+        "code": "uk_accounting_entry_accounting_account_active",
+        "message": "Ya existe un detalle de asiento contable con la misma cuenta contable."
+    },
+    {
+        "code": "chk_accounting_entry_credit_debit",
+        "message": "El crédito y el débito no pueden ser cero al mismo tiempo."
+    },
+    {
+        "code": "chk_accounting_entry_credit_debit_equal",
+        "message": "El crédito y el débito no pueden ser diferentes."
+    },
+    {
+        "code": "chk_accounting_entry_line_amount_positive",
+        "message": "El monto debe ser mayor a cero."
+    }
+]

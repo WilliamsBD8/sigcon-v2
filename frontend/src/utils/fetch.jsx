@@ -1,0 +1,158 @@
+import { base_redirect_path } from './functions';
+
+export const request = async (url, data = {}, method = 'POST', time = 500, headers = {}, showErrorAlert, useToken) => {
+
+    if (useToken) {
+        const token = localStorage.getItem('token');
+        if (token) {
+            headers.Authorization = `Bearer ${token}`;
+        }
+    }
+
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
+
+    const options = {
+        method,
+        headers: {
+            ...headers
+        },
+    };
+    if (!isFormData) {
+        options.headers['Content-Type'] = 'application/json';
+    }
+    if (data) {
+        options.body = isFormData ? data : JSON.stringify(data);
+    }
+
+    if (time != 0) {
+        window.Swal.fire({
+            showConfirmButton: false,
+            allowOutsideClick: false,
+            customClass: {},
+            willOpen: function () {
+                Swal.showLoading();
+            }
+        });
+    }
+    // Timeout de 15 segundos para evitar que se quede colgado
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    options.signal = controller.signal;
+
+    return fetch(url, options).then(async response => {
+        clearTimeout(timeoutId);
+        if (response.redirected)
+            window.location.href = response.url;
+
+        if (response.status == 401) {
+            throw new Error(JSON.stringify({
+                msg: 'Por favor inicia sesión nuevamente',
+                title: 'Sesión expirada',
+                error: 'Error general',
+                status: 401
+            }));
+        } else if (response.status == 403) {
+            throw new Error(JSON.stringify({
+                msg: 'No tienes permisos para acceder a este recurso',
+                title: 'Permiso denegado',
+                error: 'Error general',
+                status: 403
+            }));
+        }
+
+        if (!response.ok) {
+            const errorData = await response.json();
+
+            throw new Error(JSON.stringify({
+                msg: errorData.msg || errorData.message || 'Error desconocido',
+                title: errorData.title || 'Error en la consulta',
+                error: errorData.error || 'Error general',
+                status: response.status,
+                errors: errorData.errors || errorData.details || []
+            }));
+        }
+
+        const responseData = await response.json();
+        return new Promise(resolve => {
+            window.Swal.close();
+            resolve(responseData);
+        });
+    }).catch(async error => {
+        clearTimeout(timeoutId);
+        window.Swal.close();
+        console.error(error);
+        // 🟡 Error controlado del backend (JSON)
+        let error_parse;
+        try {
+            error_parse = JSON.parse(error.message);
+        } catch {
+            error_parse = {
+                title: 'Error',
+                msg: 'Error inesperado',
+                error: error.message
+            };
+        }
+
+        if (error_parse.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+
+            window.Swal.fire({
+                title: error_parse.title,
+                text: error_parse.msg,
+                icon: "warning",
+                confirmButtonText: "Ir al login",
+                allowOutsideClick: false,
+                showConfirmButton: true,
+                showCancelButton: false,
+                showCloseButton: false,
+                customClass: {
+                    confirmButton: 'btn btn-primary waves-effect'
+                }
+            });
+
+            window.location.href = base_redirect_path(true);
+
+            return Promise.reject(error_parse);
+        } else if (error_parse.status === 403) {
+            if (showErrorAlert) {
+                window.Swal.fire({
+                    icon: 'error',
+                    title: error_parse.title,
+                    text: error_parse.msg || error_parse.error,
+                    allowOutsideClick: false,
+                    customClass: {
+                        confirmButton: 'btn btn-primary waves-effect'
+                    }
+                });
+            }
+            return Promise.reject(error_parse);
+        } else if (error_parse.status === 400 && error_parse.msg === 'Usuario no encontrado') {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+        }
+
+        if (showErrorAlert)
+            window.Swal.fire({
+                icon: 'error',
+                title: error_parse.title,
+                text: error_parse.msg || error_parse.error,
+                allowOutsideClick: false,
+                customClass: {
+                    confirmButton: 'btn btn-primary waves-effect'
+                }
+            });
+
+        return Promise.reject(error_parse);
+    });
+}
+
+export const fetchHelper = {
+    get: (url, headers = {}, time = 1, showErrorAlert = false, useToken = true) => request(url, null, 'GET', time, headers, showErrorAlert, useToken),
+    post: (url, data, headers = {}, time = 1, showErrorAlert = false, useToken = true) => request(url, data, 'POST', time, headers, showErrorAlert, useToken),
+    /** POST multipart (pase FormData como data; no fija Content-Type para que el navegador envíe boundary) */
+    postForm: (url, formData, headers = {}, time = 1, showErrorAlert = false, useToken = true) =>
+        request(url, formData, 'POST', time, headers, showErrorAlert, useToken),
+    put: (url, data, headers = {}, time = 1, showErrorAlert = false, useToken = true) => request(url, data, 'PUT', time, headers, showErrorAlert, useToken),
+    delete: (url, data, headers = {}, time = 1, showErrorAlert = false, useToken = true) => request(url, data, 'DELETE', time, headers, showErrorAlert, useToken),
+};

@@ -1,0 +1,10 @@
+[
+    {
+        "code": "uk_assets_code_active",
+        "message": "Ya existe un activo activo con ese código."
+    },
+    {
+        "code": "uk_assets_name_active",
+        "message": "Ya existe un activo activo con ese nombre."
+    }
+]

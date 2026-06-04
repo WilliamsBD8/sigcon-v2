@@ -1,0 +1,10 @@
+[
+    {
+        "code": "uk_products_code_active",
+        "message": "Ya existe un producto con el mismo código."
+    },
+    {
+        "code": "uk_product_accountings",
+        "message": "Ya existe una asignación de cuenta contable con ese producto y cuenta contable."
+    }
+]

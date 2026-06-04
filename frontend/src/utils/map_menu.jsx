@@ -1,0 +1,238 @@
+import Home from "../pages/home/index";
+import PerfilPage from "../pages/parametrizacion/perfil/index";
+
+// Parametrizacion
+import IndexModules from "../pages/parametrizacion/modules/index";
+import IndexMenus from "../pages/parametrizacion/menus/index";
+import PermissionsIndex from "../pages/parametrizacion/permissions/index";
+import IndexUsers from "../pages/parametrizacion/users/index";
+import IndexCompanies from "../pages/parametrizacion/companies/index";
+
+import IndexRoles from "../pages/parametrizacion/roles/index";
+import IndexParameters from "../pages/parametrizacion/parameters/index";
+import IndexCentrosCosto from "../pages/list_accounts/centros-costo/index";
+import MenuPermissionIndex from "../pages/parametrizacion/menus-permissions";
+import IndexCuentasContables from "../pages/list_accounts/cuentas-contables/index";
+
+// Activos
+import IndexAssets from "../pages/assets/assets_registry/index";
+
+// List Accounts
+import IndexDepreciationRules from "../pages/list_accounts/depreciation_rules/index";
+import ExchangeRateIndex from "../pages/list_accounts/exchange-rate/index";
+import CurrencyIndex from "../pages/list_accounts/currency/index";
+import RulesTaxIndex from "../pages/list_accounts/rules_tax/index";
+import IndexPUC from "../pages/list_accounts/puc/index";
+
+// Reportes
+import RepBalanceComprobacion from "../pages/list_accounts/rep-balance-comprobacion/BalanceComprobacion";
+import RepLibroDiario from "../pages/list_accounts/rep-libro-diario/LibroDiario";
+import RepLibroMayor from "../pages/list_accounts/rep-libro-mayor/LibroMayor";
+import RepAuxiliaresCuentas from "../pages/list_accounts/rep-auxiliares-cuenta/AuxiliaresCuentas";
+import RepEstadosFinancieros from "../pages/list_accounts/rep-estados-financieros/EstadosFinancieros";
+
+//Activos (Assets)
+import AssetReportGeneration from "../pages/assets/asset-report-generation";
+
+// Third Party
+import IndexThirdPartyList from "../pages/third-party/third_party_list/index";
+
+// Bank and Cash
+import IndexCashList from "../pages/cash-and-banks/cash_list/index";
+
+// Assets
+import CreateAssets from "../pages/assets/assets_registry/create";
+import EditAssets from "../pages/assets/assets_registry/edit";
+import AssetDepreciationCalculation from "../pages/assets/depreciation-calculation/index";
+import BajasTransferencias from "../pages/assets/bajas_transferencias/index";
+import KardexAssets from "../pages/assets/kardex/index";
+
+//Cajas y bancos
+import IndexCashAndBanks from "../pages/cash-and-banks/banks/index";
+
+import PageMaintenance from "../pages/errors/page_maintenance";
+
+// NIIF
+import NiifVerificationIndex from "../pages/assets/niif_verification/index";
+import NiifCorrectionIndex from "../pages/assets/niif_correction/index";
+
+import IndexSegmentation from "../pages/third-party/segmentation/index"
+
+// Cash and Banks
+import IndexCheques from "../pages/cash-and-banks/cheques/index";
+import IndexCheckbooks from "../pages/cash-and-banks/chequeras/index";
+import IndexBankBranches from "../pages/cash-and-banks/surcursales/index";
+import IndexBankAccounts from "../pages/cash-and-banks/bank-accounts/index";
+
+// Invoices
+import IndexOC from "../pages/invoices/OC/index";
+import CreateOC from "../pages/invoices/OC/create";
+import UpdateOC from "../pages/invoices/OC/edit";
+
+import IndexFC from "../pages/invoices/FC/index";
+import CreateInvoiceFC from "../pages/invoices/FC/create";
+import EditInvoiceFC from "../pages/invoices/FC/edit";
+import ViewInvoiceFC from "../pages/invoices/FC/view";
+import IndexFV from "../pages/invoices/FV/index";
+import CreateInvoiceFV from "../pages/invoices/FV/create";
+import EditInvoiceFV from "../pages/invoices/FV/edit";
+import ViewInvoiceFV from "../pages/invoices/FV/view";
+import ViewInvoiceOC from "../pages/invoices/OC/view";
+
+// Inventory
+import IndexProducts from "../pages/assets/products/index";
+
+// Vouchers
+import IndexInvoicePayments from "../pages/invoices/vouchers/invoice";
+import IndexVouchers from "../pages/vouchers/index";
+
+
+import { base_url } from "./functions";
+import { fetchHelper } from "./fetch";
+
+
+export const getMenu = async () => {
+  const modules = [];
+  const url = base_url(["api", "modules", "menu"]);
+  modules.push({
+    id: 0,
+    name: "Dashboard",
+    url: "dashboard",
+    icon: "ri-home-smile-line",
+    position: 0,
+    menus: [
+      {
+        id: 0,
+        label: "Home",
+        path: "",
+        position: 0,
+        componentName: "HOME",
+        menus: [
+          {
+            id: 0,
+            label: "Home",
+            path: "",
+            position: 0,
+            icon: "ri-home-smile-line",
+            childrens: [],
+            // component: Home,
+            componentName: "HOME"
+          }
+        ]
+      }
+    ]
+  });
+  try {
+    const { data, error } = await fetchHelper.get(url, {}, 0);
+    if (!error) {
+
+      modules.push(...data?.map(mod => {
+        // Construir el árbol de menús normalmente
+        const menuTree = buildMenuTree(mod?.menus?.map(menu => ({
+          ...menu,
+          componentName: menu?.component,
+        })));
+
+        return {
+          ...mod,
+          menus: menuTree
+        };
+      }));
+    }
+  } catch (error) {
+    console.log(error);
+  } finally {
+    return modules;
+  }
+};
+
+const buildMenuTree = (menus) => {
+  const menuMap = {};
+  const tree = [];
+
+  // 1. Crear el mapa y preparar childrens
+  menus.forEach((menu) => {
+    menuMap[menu.id] = {
+      ...menu,
+      childrens: [],
+    };
+  });
+
+  // 2. Construir el árbol
+  menus.forEach((menu) => {
+    if (menu.parentId === null) {
+      tree.push(menuMap[menu.id]);
+    } else {
+      const parent = menuMap[menu.parentId];
+      if (parent) {
+        parent.childrens.push(menuMap[menu.id]);
+      }
+    }
+  });
+
+  return tree;
+};
+
+export const buildFullPath = (parent = "", current = "") => {
+  return `/${[parent, current].filter(Boolean).join("/")}`;
+};
+
+export const COMPONENT_MAP = [
+  { id: "HOME", name: "Home", component: Home },
+  { id: "PERFIL", name: "Perfil", component: PerfilPage },
+  { id: "MODULOS", name: "Módulos", component: IndexModules },
+  { id: "MENUS", name: "Menus", component: IndexMenus },
+  { id: "PERMISSIONS", name: "Permisos", component: PermissionsIndex },
+  { id: "USERS", name: "Usuarios", component: IndexUsers },
+  { id: "ROLES", name: "Roles", component: IndexRoles },
+  { id: "PARAMETROS", name: "Parámetros", component: IndexParameters },
+  { id: "CENTROS_COSTO", name: "Centros de Costo", component: IndexCentrosCosto },
+  { id: "MENUSPERMISSIONS", name: "Permisos de Menú", component: MenuPermissionIndex },
+  { id: "CUENTAS_CONTABLES", name: "Cuentas Contables", component: IndexCuentasContables },
+  { id: "DEPRECIATION_RULES", name: "Reglas de Depreciación", component: IndexDepreciationRules },
+  { id: "PUC", name: "Catálogo PUC", component: IndexPUC },
+  { id: "REP_BALANCE_COMPROBACION", name: "Reporte Balance de Comprobación", component: RepBalanceComprobacion },
+  { id: "REP_LIBRO_DIARIO", name: "Reporte Libro Diario", component: RepLibroDiario },
+  { id: "REP_LIBRO_MAYOR", name: "Reporte Libro Mayor", component: RepLibroMayor },
+  { id: "REP_AUXILIARES_CUENTAS", name: "Reporte Auxiliares de cuentas", component: RepAuxiliaresCuentas },
+  { id: "REP_ESTADOS_FINANCIEROS", name: "Reporte Estados Financieros", component: RepEstadosFinancieros },
+  { id: "ACT_GENERACION_INFORMES", name: "Activos Generación de Informes", component: AssetReportGeneration },
+  { id: "EXCHANGE_RATE", name: "Tasas de Cambio", component: ExchangeRateIndex },
+  { id: "CURRENCY_TYPES", name: "Tipos de Monedas", component: CurrencyIndex },
+  { id: "RULES_TAX", name: "Reglas Tributarias", component: RulesTaxIndex },
+  { id: "SEGMENTATION", name: "Segmentacion Terceros", component: IndexSegmentation },
+  { id: "CREATE_ASSETS", name: "Crear Activo", component: CreateAssets },
+  { id: "NIIF_VERIFICATION", name: "Verificación NIIF", component: NiifVerificationIndex },
+  { id: "NIIF_CORRECTION", name: "Corrección NIIF", component: NiifCorrectionIndex },
+  { id: "ACT_CALCULO_DEPRECIACION", name: "Cálculo de Depreciación", component: AssetDepreciationCalculation },
+  { id: "ACT_BAJAS_TRANSFERENCIAS", name: "Control de Bajas y Transferencias", component: BajasTransferencias },
+  { id: "ACT_KARDEX", name: "Kardex", component: KardexAssets },
+  { id: "THIRD_PARTY_LIST", name: "Lista de Terceros", component: IndexThirdPartyList },
+  { id: "ASSETS_REGISTRY", name: "Registro de Activos", component: IndexAssets },
+  { id: "UPDATE_ASSETS", name: "Actualizar Activo", component: EditAssets },
+  { id: "CATALOGO_BANCOS", name: "Catalogo de Bancos", component: IndexCashAndBanks },
+  { id: "SUCURSALES_BANCARIAS", name: "Sucursales Bancarias", component: IndexBankBranches },
+  { id: "CHEQUES", name: "Cheques", component: IndexCheques },
+  { id: "CHEQUERAS", name: "Chequeras", component: IndexCheckbooks },
+  { id: "COMPANIES", name: "Empresas", component: IndexCompanies },
+  { id: "BANK_ACCOUNTS", name: "Cuentas Bancarias", component: IndexBankAccounts },
+  { id: "CASH_LIST", name: "Lista de Cajas", component: IndexCashList },
+  { id: "PURCHASE_ORDERS", name: "Ordenes de Compra", component: IndexOC },
+  { id: "CREATE_PURCHASE_ORDERS", name: "Crear Orden de Compra", component: CreateOC },
+  { id: "UPDATE_PURCHASE_ORDERS", name: "Actualizar Orden de Compra", component: UpdateOC },
+
+  { id: "INVOICE_BILL", name: "Facturas de Compra", component: IndexFC },
+  { id: "INVOICE_BILL_PAYMENTS", name: "Pagos de Facturas de Compra", component: IndexInvoicePayments },
+  { id: "VOUCHERS", name: "Comprobantes", component: IndexVouchers },
+  { id: "CREATE_INVOICE_BILL", name: "Crear Factura de Compra", component: CreateInvoiceFC },
+  { id: "UPDATE_INVOICE_BILL", name: "Actualizar Factura de Compra", component: EditInvoiceFC },
+  { id: "VIEW_INVOICE_BILL", name: "Ver Factura de Compra", component: ViewInvoiceFC },
+  { id: "INVOICE_SALE", name: "Facturas de Venta", component: IndexFV },
+  { id: "CREATE_INVOICE_SALE", name: "Crear Factura de Venta", component: CreateInvoiceFV },
+  { id: "UPDATE_INVOICE_SALE", name: "Actualizar Factura de Venta", component: EditInvoiceFV },
+  { id: "VIEW_INVOICE_SALE", name: "Ver Factura de Venta", component: ViewInvoiceFV },
+  { id: "VIEW_PURCHASE_ORDERS", name: "Ver Orden de Compra", component: ViewInvoiceOC },
+
+  // Inventory
+  { id: "PRODUCTS_LIST", name: "Lista de Productos", component: IndexProducts },
+];
