@@ -514,6 +514,18 @@ public class CompanyService {
         );
     }
 
+    @Transactional
+    public List<String> getCompanies() {
+        List<Company> companies = companyRepository.findAll();
+        return companies.stream()
+                .map(Company::getName)
+                .collect(Collectors.toList());
+    }
+
+    public List<Company> findAll() {
+        return companyRepository.findAll();
+    }
+    
     // ===== Helpers =====
 
     private void validateMandatoryFields(CreateCompanyRequest request) {

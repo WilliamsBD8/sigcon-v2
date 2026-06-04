@@ -1,9 +1,9 @@
 export const base_url = (array = [], get = {}) => {
 
-    let base = `${import.meta.env.VITE_API_URL || 'https://api.inmero.co/sigcon/dev/'}`;
+    let baseUrl = localStorage.getItem('baseUrl') || import.meta.env.VITE_API_URL || 'https://api.inmero.co/sigcon/dev/';
 
     // Quitar slash final de la base
-    base = base.replace(/\/+$/, '');
+    baseUrl = baseUrl.replace(/\/+$/, '');
 
     // Construir path sin slash inicial
     const path = array.length > 0
@@ -15,7 +15,7 @@ export const base_url = (array = [], get = {}) => {
         .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
         .join('&');
 
-    const urlFinal = path ? `${base}/${path}` : base;
+    const urlFinal = path ? `${baseUrl}/${path}` : baseUrl;
 
     
 
@@ -27,9 +27,7 @@ export const base_redirect_path = (is_login = false) => {
     const joinPath = (...parts) =>
         parts.join('/').replace(/\/+/g, '/')
 
-    const base = import.meta.env.VITE_ENVIRONMENT == 'local'
-        ? '/' : import.meta.env.VITE_ENVIRONMENT == 'development'
-            ? '/sigcon/dev/' : '/sigcon/'
+    const base = ""
 
     return is_login
         ? joinPath(base, '/login')

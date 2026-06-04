@@ -6,30 +6,33 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import com.sigcon.backend.parametrization.companies.domain.service.CompanyService;
+
+import java.util.ArrayList;
 import java.util.List;
 
 @Configuration
 public class CorsConfig {
+   
 
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+    public CorsConfigurationSource corsConfigurationSource(CompanyService companyService) {
 
         CorsConfiguration config = new CorsConfiguration();
 
+        List<String> origins = new ArrayList<>();
 
-        config.setAllowedOrigins(List.of(
-            "http://localhost:5173",
-            "http://165.22.166.82:5173/",
-            "http://138.197.202.104:5173/",
-            "${CORS_ALLOWED_ORIGINS:http://localhost:3000}",
-            "http://localhost:3000",
-            "https://www.inmero.co",
-            "https://www.inmero.co/sigcon",
-            "https://inmero.co/sigcon",
-            "https://inmero.co"
-        ));
+        origins.add("http://localhost:5173");
+        origins.add("http://localhost:3000");
+
+        companyService.findAll().forEach(company -> {
+            if (company.getIntegrationUrl() != null) {
+                origins.add(company.getIntegrationUrl());
+            }
+        });
 
 
+        config.setAllowedOrigins(origins);
 
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 
