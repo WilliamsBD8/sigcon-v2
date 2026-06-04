@@ -137,8 +137,9 @@ public class VoucherService {
         switch (voucherTypeEntity.getCode()) {
             case "PAYMENT":
             case "RECEIPT":
-                if(request.getInvoiceId() == null) {
-                    throw new IllegalArgumentException("Debe seleccionar una factura para el comprobante de " + voucherTypeEntity.getName().toLowerCase());
+                if(request.getInvoiceId() == null && request.getAssetId() == null) {
+                    String type = request.getAssetId() != null ? "un activo" : "una factura";
+                    throw new IllegalArgumentException("Debe seleccionar " + type + " para el comprobante de " + voucherTypeEntity.getName().toLowerCase());
                 }
                 break;
             case "PAYROLL":
@@ -189,8 +190,15 @@ public class VoucherService {
             totalPayments = totalPayments.add(voucherEntity.getAmount());
             if(totalPayments.compareTo(totalPayment) > 0) {
                 throw new RuntimeException("El comprobante excede el total a pagar de la factura");
+            }else if(totalPayments.compareTo(totalPayment) == 0) {
+                invoice.setStatus(StatusesInvoices.PAID);
+                invoiceRepository.save(invoice);
             }
             voucherEntity.setInvoice(invoice);
+        }else if(request.getAssetId() != null) {
+            Assets asset = assetsRepository.findById(request.getAssetId())
+            .orElseThrow(() -> new RuntimeException("El activo no existe"));
+            voucherEntity.setAsset(asset);
         }
 
         if(request.getFile() != null) {
@@ -309,7 +317,7 @@ public class VoucherService {
         
         
         voucherEntity = voucherRepository.save(voucherEntity);
-        createAccountingEntry(voucherEntity, request.getLines());
+        // createAccountingEntry(voucherEntity, request.getLines());
         diaryBookService.updateValuesDiaryBook();
         banksIds.forEach(bankAccountService::updateBalance);
         cashIds.forEach(cashService::updateBalance);
@@ -374,8 +382,9 @@ public class VoucherService {
         switch (voucher.getVoucherType().getCode()) {
             case "PAYMENT":
             case "RECEIPT":
-                if(request.getInvoiceId() == null) {
-                    throw new IllegalArgumentException("Debe seleccionar una factura para el comprobante de " + voucher.getVoucherType().getName().toLowerCase());
+                if(request.getInvoiceId() == null && request.getAssetId() == null) {
+                    String type = request.getAssetId() != null ? "un activo" : "una factura";
+                    throw new IllegalArgumentException("Debe seleccionar " + type + " para el comprobante de " + voucher.getVoucherType().getName().toLowerCase());
                 }
                 break;
             case "PAYROLL":
@@ -592,14 +601,23 @@ public class VoucherService {
 
         switch (voucher.getVoucherType().getCode()) {
             case "PAYMENT":
-                description += " - Pago de compra: " + InvoiceUtil.codeInvoice("FC", voucher.getInvoice().getResolution());
+                description += " - Pago de compra: ";
+                if(voucher.getInvoice() != null) {
+                    description += InvoiceUtil.codeInvoice("FC", voucher.getInvoice().getResolution());
+                }else if(voucher.getAsset() != null) {
+                    description += "Activo: " + voucher.getAsset().getAssetCode();
+                }
+
+                ThirdParty thirdPartyCode = voucher.getInvoice() != null ? voucher.getInvoice().getThirdParty() : voucher.getAsset().getProduct().getThirdParty();
                 
-                String codeAccountCredit = voucher.getInvoice().getThirdParty().getCurrencyType().getIsoCode()
-                .equals(voucher.getCompany().getCurrencyType().getIsoCode()) ? "2205" : "2210";
+                Boolean thirdNational = thirdPartyCode.getCurrencyType().getIsoCode()
+                .equals(voucher.getCompany().getCurrencyType().getIsoCode());
+
+                String codeAccountCredit = thirdNational ? "2205" : "2210";
  
                 AccountingAccount accountingAccount = accountingAccountRepository.findByPucAccountCodeAndCompany(
                     codeAccountCredit, voucher.getCompany())
-                    .orElseThrow(() -> new RuntimeException("No existe cuenta contable para el proveedor"));
+                    .orElseThrow(() -> new RuntimeException("No existe cuenta contable para el proveedor " + (thirdNational ? "nacional" : "extranjero")));
 
                 accountingEntryRequest.getLines().add(AccountingEntryLineRequest.builder()
                     .accountingAccountCode(accountingAccount.getPucAccount().getCode())

@@ -51,6 +51,10 @@ public class CompanyDTO {
     // Retenciones asociadas
     private List<WithholdingDTO> withholdings;
 
+    private String integrationUrl;
+    private Integer monthsPerPeriod;
+    private Integer fiscalYearStartMonth;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;

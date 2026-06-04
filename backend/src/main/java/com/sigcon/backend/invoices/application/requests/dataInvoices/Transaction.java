@@ -49,6 +49,9 @@ public class Transaction {
     @Schema (description = "ID de la factura", example = "1234567890")
     private Long invoiceId;
 
+    @Schema (description = "ID del activo", example = "1234567890")
+    private Long assetId;
+
     @Schema(description = "ID del tipo de comprobante", example = "1")
     @NotNull(message = "El tipo de comprobante es requerido")
     private Long voucherTypeId;

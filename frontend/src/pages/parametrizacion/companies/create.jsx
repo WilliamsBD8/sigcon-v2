@@ -16,7 +16,8 @@ const CreateCompany = ({
     typesRegimes,
     typesOrganizations,
     withholdings,
-    countries
+    countries,
+    currenciesTypes
 }) => {
 
     const [errors, setErrors] = useState({});
@@ -207,7 +208,6 @@ const CreateCompany = ({
                                     error={errors.typeOrganizationId}
                                 />
                             </div>
-
                             <div className="col-lg-4 col-md-12 col-sm-12 my-1">
                                 <InputSelectModal
                                     id="withholdings-company-create"
@@ -228,9 +228,67 @@ const CreateCompany = ({
                                 />
                             </div>
                         </div>
-
                         <div className="row">
                             <div className="col-lg-4 col-md-12 col-sm-12 my-1">
+                                <InputSelectModal
+                                    id="currency-type-id-company-create"
+                                    label="Tipo de Moneda"
+                                    name="currencyTypeId"
+                                    options={currenciesTypes.map(currencyType => ({
+                                        id: currencyType.id,
+                                        label: currencyType.name
+                                    }))}
+                                    value={company.currencyTypeId}
+                                    onChange={(value) => {
+                                        setCompany({ ...company, currencyTypeId: value })
+                                        setErrors({ ...errors, currencyTypeId: '' })
+                                    }}
+                                    required
+                                    error={errors.currencyTypeId}
+                                />
+                            </div>
+                            <div className="col-lg-4 col-md-12 col-sm-12 my-1">
+                                <InputSelectModal
+                                    id="months-per-period-company-create"
+                                    label="Periodo fiscal"
+                                    name="monthsPerPeriod"
+                                    options={[
+                                        { id: 1, label: 'Mensual'},
+                                        { id: 3, label: 'Trimestral'},
+                                        { id: 6, label: 'Semestral'},
+                                        { id: 12, label: 'Anual'},
+                                    ]}
+                                    value={company.monthsPerPeriod}
+                                    onChange={(value) => {
+                                        setCompany({ ...company, monthsPerPeriod: value })
+                                        setErrors({ ...errors, monthsPerPeriod: '' })
+                                    }}
+                                    required
+                                    error={errors.monthsPerPeriod}
+                                />
+                            </div>
+                            <div className="col-lg-4 col-md-12 col-sm-12 my-1">
+                                <InputSelectModal
+                                    id="fiscal-year-start-month-company-create"
+                                    label="Mes de inicio del periodo fiscal"
+                                    name="fiscalYearStartMonth"
+                                    options={Array.from({ length: 12 }, (_, i) => ({
+                                        id: i + 1,
+                                        label: new Date(0, i).toLocaleString('es-ES', { month: 'long' })
+                                    }))}
+                                    value={company.fiscalYearStartMonth}
+                                    onChange={(value) => {
+                                        setCompany({ ...company, fiscalYearStartMonth: value })
+                                        setErrors({ ...errors, fiscalYearStartMonth: '' })
+                                    }}
+                                    required
+                                    error={errors.fiscalYearStartMonth}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="row">
+                            <div className="col-lg-3 col-md-12 col-sm-12 my-1">
                                 <InputModal
                                     id="legal-representative-company-create"
                                     label="Representante Legal"
@@ -247,7 +305,7 @@ const CreateCompany = ({
                                 />
                             </div>
 
-                            <div className="col-lg-4 col-md-12 col-sm-12 my-1">
+                            <div className="col-lg-3 col-md-12 col-sm-12 my-1">
                                 <InputModal
                                     id="email-company-create"
                                     label="Email"
@@ -264,7 +322,7 @@ const CreateCompany = ({
                                 />
                             </div>
 
-                            <div className="col-lg-4 col-md-12 col-sm-12 my-1">
+                            <div className="col-lg-3 col-md-12 col-sm-12 my-1">
                                 <InputModal
                                     id="phone-company-create"
                                     label="Teléfono"
@@ -278,6 +336,21 @@ const CreateCompany = ({
                                     required
                                     error={errors.phone}
                                     placeholder="Ingrese el teléfono"
+                                />
+                            </div>
+
+                            <div className="col-lg-3 col-md-12 col-sm-12 my-1">
+                                <InputModal
+                                    id="integration-url-company-create"
+                                    label="URL de integración"
+                                    name="integrationUrl"
+                                    type="text"
+                                    value={company.integrationUrl}
+                                    onChange={(e) => {
+                                        setCompany({ ...company, integrationUrl: e.target.value })
+                                    }}
+                                    error={false}
+                                    placeholder="Ingrese la URL de integración"
                                 />
                             </div>
                         </div>

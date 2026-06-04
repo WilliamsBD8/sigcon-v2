@@ -51,8 +51,11 @@ const CompaniesIndex = () => {
             "status": null,
             "isMain": true,
             "municipalityId": null
-        }
-        
+        },
+        "integrationUrl": null,
+        "currencyTypeId": null,
+        "monthsPerPeriod": null,
+        "fiscalYearStartMonth": null,
     }
     const [company, setCompany] = useState({});
 
@@ -79,6 +82,7 @@ const CompaniesIndex = () => {
     const [typesOrganizations, setTypesOrganizations] = useState([]);
     const [withholdings, setWithholdings] = useState([]);
     const [countries, setCountries] = useState([]);
+    const [currenciesTypes, setCurrenciesTypes] = useState([]);
 
     const loadBasicData = async () => {
         try{
@@ -87,20 +91,23 @@ const CompaniesIndex = () => {
                 ['api/v1/resources/types-regimes'],
                 ['api/v1/resources/types-organizations'],
                 ['api/v1/resources/withholdings'],
-                ['api/v1/resources/countries']
+                ['api/v1/resources/countries'],
+                ['api/v1/accounting-lists/currency-types/search']
             ];
 
-            const [typesRegimesResponse, typesOrganizationsResponse, withholdingsResponse, countriesResponse] = await Promise.all([
+            const [typesRegimesResponse, typesOrganizationsResponse, withholdingsResponse, countriesResponse, currenciesTypesResponse] = await Promise.all([
                 fetchHelper.post(base_url(urlApis[0]), {length: -1}, {}, 0, false),
                 fetchHelper.post(base_url(urlApis[1]), {length: -1}, {}, 0, false),
                 fetchHelper.post(base_url(urlApis[2]), {length: -1}, {}, 0, false),
                 fetchHelper.post(base_url(urlApis[3]), {length: -1}, {}, 0, false),
+                fetchHelper.post(base_url(urlApis[4]), {length: -1}, {}, 0, false),
             ]);
 
             setTypesRegimes(typesRegimesResponse.data);
             setTypesOrganizations(typesOrganizationsResponse.data);   
             setWithholdings(withholdingsResponse.data);
             setCountries(countriesResponse.data);
+            setCurrenciesTypes(currenciesTypesResponse.data);
 
         } catch (error) {
             console.error(error);
@@ -257,6 +264,7 @@ const CompaniesIndex = () => {
                 typesOrganizations={typesOrganizations}
                 withholdings={withholdings}
                 countries={countries}
+                currenciesTypes={currenciesTypes}
             />
             <EditCompany
                 modalRef={modalEditRef}
@@ -269,6 +277,7 @@ const CompaniesIndex = () => {
                 typesOrganizations={typesOrganizations}
                 withholdings={withholdings}
                 countries={countries}
+                currenciesTypes={currenciesTypes}
             />
         </>
     )

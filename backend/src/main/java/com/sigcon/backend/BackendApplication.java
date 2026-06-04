@@ -1,5 +1,6 @@
 package com.sigcon.backend;
 
+import com.sigcon.backend.general.config.DotEnvLoader;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -16,7 +17,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class BackendApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(BackendApplication.class, args);
+		SpringApplication application = new SpringApplication(BackendApplication.class);
+		application.setDefaultProperties(DotEnvLoader.loadAsSpringDefaults());
+		application.run(args);
 	}
 
 }

@@ -151,8 +151,17 @@ public class UserService {
                     .body(ErrorRespondJson.getErrorRespondMessage(Optional.of("La empresa es obligatoria")));
         }
 
-        Company company = companyRepository.findById(request.getCompanyId())
-                .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
+        User userSession = userUtil.getUser();
+        Company companySession = userSession.getCompany();
+
+        Company company = null;
+
+        if(request.getCompanyId() == null) {
+                company = companySession;
+        } else {
+                company = companyRepository.findById(request.getCompanyId())
+                        .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
+        }
 
         User user = User.builder()
                 .name(request.getName())

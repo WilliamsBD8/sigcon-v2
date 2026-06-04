@@ -257,12 +257,12 @@ const IndexAssets = () => {
       class: "btn-label-primary",
       title: "Editar",
     },
-    {
-      key: "kardex",
-      icon: "ri-arrow-left-right-line",
-      class: "btn-label-primary",
-      title: "Kardex",
-    },
+    // {
+    //   key: "kardex",
+    //   icon: "ri-arrow-left-right-line",
+    //   class: "btn-label-primary",
+    //   title: "Kardex",
+    // },
     {
       key: "delete",
       icon: "ri-delete-bin-5-line",
@@ -278,10 +278,10 @@ const IndexAssets = () => {
   ];
 
   const columns = [
-    { title: "Comprobante", data: "vouchers", name: "vouchers", render: (v) => {
-      const comprobado = v.length > 0;
-      return comprobado ? `<span class="badge bg-success">Sí</span>` : `<span class="badge bg-danger">No</span>`;
-    }, searchable: false },
+    // { title: "Comprobante", data: "vouchers", name: "vouchers", render: (v) => {
+    //   const comprobado = v.length > 0;
+    //   return comprobado ? `<span class="badge bg-success">Sí</span>` : `<span class="badge bg-danger">No</span>`;
+    // }, searchable: false },
     { title: "Código", data: "assetCode", name: "assetCode" },
     { title: "Nombre", data: "name", name: "name" },
     {

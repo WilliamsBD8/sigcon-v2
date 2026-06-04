@@ -48,6 +48,8 @@ const CreateAssets = (
   const [checks, setChecks] = useState([]);
   const [cash, setCash] = useState([]);
 
+  const [products, setProducts] = useState([]);
+
   const [taxRulers, setTaxRulers] = useState([]);
 
   const ASSETS_BASIC = {
@@ -73,6 +75,7 @@ const CreateAssets = (
     observations: "",
     taxesRetention: [],
     tax: null,
+    productId: "",
   }
 
   const [assets, setAssets] = useState({});
@@ -93,7 +96,8 @@ const CreateAssets = (
         depreciationRulesResponse,
         paymentFormsResponse,
         cashResponse,
-        checksResponse
+        checksResponse,
+        productsResponse
       ] = await Promise.all([
         fetchHelper.post(base_url(["api", "v1", "accounting-accounts"]),
           { length: -1 },
@@ -114,7 +118,7 @@ const CreateAssets = (
           0
         ),
         fetchHelper.post(base_url(["api", "v1", "resources/payment-forms"]),
-          { length: -1 },
+          { length: -1, columns: [{data: "id", search: {value: "1", regex: false}}], },
           {},
           0
         ),
@@ -127,6 +131,13 @@ const CreateAssets = (
           { length: -1, columns: [{data: "statusCheck", searchable: true, search: {value: "EMITIDO", regex: false}}], },
           {},
           0
+        ),
+        fetchHelper.post(base_url(["api", "v1", "products", "page"]),
+          { length: -1, columns: [
+            {data: 'productAccountings.accountingAccount.pucAccount.code', searchable: true, search: {value: "14%,12%,15%,16%", regex: true}}
+          ]},
+          {},
+          0
         )
       ]);
       setAccountingAccounts(accountingAccountsResponse.data);
@@ -136,6 +147,7 @@ const CreateAssets = (
       setPaymentForms(paymentFormsResponse.data);
       setCash(cashResponse.data);
       setChecks(checksResponse.data);
+      setProducts(productsResponse.data);
 
       const [taxRulersResponse] = await Promise.all([
         fetchHelper.post(base_url(["api", "v1", "ruler-tax/search"]),
@@ -355,7 +367,7 @@ const CreateAssets = (
           <i className="ri-file-list-3-line me-1"></i>Informacion de la factura
         </p>
         <div className="row">
-          <div className="col-md-4 mb-4 mt-4">
+          <div className="col-md-3 mb-4 mt-4">
             <InputSelectModal
               id="supplierId"
               label="Proveedor"
@@ -367,7 +379,25 @@ const CreateAssets = (
               required
             />
           </div>
-          <div className="col-md-4 mb-4 mt-4">
+
+          <div className="col-md-3 mb-4 mt-4">
+            <InputSelectModal
+              id="productId"
+              label="Producto"
+              value={assets.productId} 
+              onChange={(value) =>
+                setAssets({ ...assets, productId: Number(value) })
+              }
+              options={products
+                .filter(p => p.thirdParty.id == assets.supplierId)
+                .map(p => ({ id: p.id, label: `${p.name} - ${p.code}` }))}
+              required
+              disabled={!assets.supplierId}
+            />
+          </div>
+
+
+          <div className="col-md-3 mb-4 mt-4">
             <InputSelectModal
               id="paymentFormId"
               label="Forma de pago"
@@ -379,7 +409,7 @@ const CreateAssets = (
             />
           </div>
 
-          <div className="col-md-4 mb-4 mt-4">
+          <div className="col-md-3 mb-4 mt-4">
             <InputDate
               id="invoiceDate"
               label="Fecha de la factura"

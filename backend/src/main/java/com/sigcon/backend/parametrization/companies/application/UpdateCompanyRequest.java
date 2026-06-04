@@ -58,5 +58,9 @@ public class UpdateCompanyRequest {
     private Long typeOrganizationId;
 
     private List<Long> withholdings;
+
+    private String integrationUrl;
+    private Integer monthsPerPeriod;
+    private Integer fiscalYearStartMonth;
 }
 

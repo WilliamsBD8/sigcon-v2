@@ -75,23 +75,23 @@ FROM (
     ('SUCURSALES_BANCARIAS', now(),NULL::timestamp,'ri-home-office-fill','Sucursales Bancos',4,'branches/:id','ACTIVE',now(),5,31, FALSE),
     ('BANK_ACCOUNTS', now(),NULL::timestamp,'ri-bank-card-line','Cuentas Bancarias',5,'bank-accounts','ACTIVE',now(),5,NULL::bigint, TRUE),
 
-    ('INVENTORY', now(),NULL::timestamp,'ri-list-check','Inventario',1,'inventory','ACTIVE',now(),6,NULL::bigint, TRUE),
+    -- ('INVENTORY', now(),NULL::timestamp,'ri-list-check','Inventario',1,'inventory','ACTIVE',now(),6,NULL::bigint, TRUE),
 	('PURCHASE_ORDERS', now(),NULL::timestamp,'ri-list-check','Ordenes de Compra',1,'purchase-orders','ACTIVE',now(),6,NULL::bigint, TRUE),
-    ('CREATE_PURCHASE_ORDERS', now(),NULL::timestamp,'ri-list-check','Crear Orden de Compra',2,'create','ACTIVE',now(),6,35, FALSE),
-    ('UPDATE_PURCHASE_ORDERS', now(),NULL::timestamp,'ri-list-check','Actualizar Orden de Compra',3,'update/:id','ACTIVE',now(),6,35, FALSE),
+    ('CREATE_PURCHASE_ORDERS', now(),NULL::timestamp,'ri-list-check','Crear Orden de Compra',2,'create','ACTIVE',now(),6,34, FALSE),
+    ('UPDATE_PURCHASE_ORDERS', now(),NULL::timestamp,'ri-list-check','Actualizar Orden de Compra',3,'update/:id','ACTIVE',now(),6,34, FALSE),
 
 	('INVOICE_BILL', now(), NULL::timestamp, 'ri-list-check', 'Facturas de Compra', 1, 'invoice-bill', 'ACTIVE', now(), 6, NULL::bigint, TRUE),
-	('INVOICE_BILL_PAYMENTS', now(), NULL::timestamp, 'ri-list-check', 'Pagos de Facturas de Compra', 3, 'payments/:id', 'ACTIVE', now(), 6, 38, false),
-	('CREATE_INVOICE_BILL', now(), NULL::timestamp, 'ri-list-check', 'Crear Factura de Compra', 4, 'create', 'ACTIVE', now(), 6, 38, FALSE),
-	('UPDATE_INVOICE_BILL', now(), NULL::timestamp, 'ri-list-check', 'Actualizar Factura de Compra', 5, 'update/:id', 'ACTIVE', now(), 6, 38, FALSE),
-	('VIEW_INVOICE_BILL', now(), NULL::timestamp, 'ri-eye-line', 'Ver Factura de Compra', 6, 'view/:id', 'ACTIVE', now(), 6, 38, FALSE),
-	('VIEW_PURCHASE_ORDERS', now(), NULL::timestamp, 'ri-eye-line', 'Ver Orden de Compra', 4, 'view/:id', 'ACTIVE', now(), 6, 35, FALSE),
+	('INVOICE_BILL_PAYMENTS', now(), NULL::timestamp, 'ri-list-check', 'Pagos de Facturas de Compra', 3, 'payments/:id', 'ACTIVE', now(), 6, 37, false),
+	('CREATE_INVOICE_BILL', now(), NULL::timestamp, 'ri-list-check', 'Crear Factura de Compra', 4, 'create', 'ACTIVE', now(), 6, 37, FALSE),
+	('UPDATE_INVOICE_BILL', now(), NULL::timestamp, 'ri-list-check', 'Actualizar Factura de Compra', 5, 'update/:id', 'ACTIVE', now(), 6, 37, FALSE),
+	('VIEW_INVOICE_BILL', now(), NULL::timestamp, 'ri-eye-line', 'Ver Factura de Compra', 6, 'view/:id', 'ACTIVE', now(), 6, 37, FALSE),
+	('VIEW_PURCHASE_ORDERS', now(), NULL::timestamp, 'ri-eye-line', 'Ver Orden de Compra', 4, 'view/:id', 'ACTIVE', now(), 6, 34, FALSE),
 
-	('INVOICE_SALE', now(), NULL::timestamp, 'ri-list-check', 'Facturas de Venta', 1, 'invoice-sale', 'ACTIVE', now(), 6, NULL::bigint, TRUE), -- 44
-	('INVOICE_SALE_PAYMENTS', now(), NULL::timestamp, 'ri-list-check', 'Pagos de Facturas de Venta', 3, 'payments/:id', 'ACTIVE', now(), 6, 44, false),
-	('CREATE_INVOICE_SALE', now(), NULL::timestamp, 'ri-list-check', 'Crear Factura de Venta', 4, 'create', 'ACTIVE', now(), 6, 44, FALSE),
-	('UPDATE_INVOICE_SALE', now(), NULL::timestamp, 'ri-list-check', 'Actualizar Factura de Venta', 5, 'update/:id', 'ACTIVE', now(), 6, 44, FALSE),
-	('VIEW_INVOICE_SALE', now(), NULL::timestamp, 'ri-eye-line', 'Ver Factura de Venta', 6, 'view/:id', 'ACTIVE', now(), 6, 44, FALSE),
+	('INVOICE_SALE', now(), NULL::timestamp, 'ri-list-check', 'Facturas de Venta', 1, 'invoice-sale', 'ACTIVE', now(), 6, NULL::bigint, TRUE), -- 43
+	('INVOICE_SALE_PAYMENTS', now(), NULL::timestamp, 'ri-list-check', 'Pagos de Facturas de Venta', 3, 'payments/:id', 'ACTIVE', now(), 6, 43, false),
+	('CREATE_INVOICE_SALE', now(), NULL::timestamp, 'ri-list-check', 'Crear Factura de Venta', 4, 'create', 'ACTIVE', now(), 6, 43, FALSE),
+	('UPDATE_INVOICE_SALE', now(), NULL::timestamp, 'ri-list-check', 'Actualizar Factura de Venta', 5, 'update/:id', 'ACTIVE', now(), 6, 43, FALSE),
+	('VIEW_INVOICE_SALE', now(), NULL::timestamp, 'ri-eye-line', 'Ver Factura de Venta', 6, 'view/:id', 'ACTIVE', now(), 6, 43, FALSE),
 
 	('VOUCHERS', now(), NULL::timestamp, 'ri-list-check', 'Comprobantes contables', 1, 'vouchers', 'ACTIVE', now(), 6, NULL::bigint, TRUE)
 

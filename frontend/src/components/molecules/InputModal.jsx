@@ -2,7 +2,7 @@ import { separador_miles, updateFormattedValue } from "@/utils/functions";
 import { useEffect, useRef } from "react";
 
 const InputModal = ({
-    type,
+    type = 'text',
     id,
     label,
     value,
@@ -29,7 +29,7 @@ const InputModal = ({
         <div className="form-floating form-floating-outline">
             <input
                 ref={inputRef}
-                type="text"
+                type={type}
                 id={id}
                 className={`form-control ${error ? 'is-invalid' : ''} ${required ? 'required' : ''}`}
                 placeholder={placeholder}

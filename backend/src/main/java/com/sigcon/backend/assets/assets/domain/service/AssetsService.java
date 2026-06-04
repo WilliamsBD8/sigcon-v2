@@ -28,6 +28,9 @@ import com.sigcon.backend.banks.checkbooks.domain.repository.CheckbookRepository
 import com.sigcon.backend.banks.checks.application.CheckDTO;
 import com.sigcon.backend.banks.checks.domain.model.Check;
 import com.sigcon.backend.banks.checks.domain.repository.CheckRepository;
+import com.sigcon.backend.invoices.application.requests.dataInvoices.Transaction;
+import com.sigcon.backend.invoices.application.requests.dataInvoices.Transaction.AccountBank;
+import com.sigcon.backend.invoices.application.requests.dataInvoices.Transaction.AccountCash;
 import com.sigcon.backend.invoices.domain.model.PaymentForms;
 import com.sigcon.backend.invoices.domain.model.PaymentMethods;
 import com.sigcon.backend.lists_accounting.accounting_account.application.AccountingAccountDTO;
@@ -285,19 +288,35 @@ public class AssetsService {
 
         BigDecimal totalAmount = request.getAcquisitionValue().add(taxValue);
 
-        CreateVoucherDTO voucherDTO = CreateVoucherDTO.builder()
-        .voucherTypeId(1L)
-        .date(request.getAcquisitionDate())
-        .amount(totalAmount)
-        .description("Compra de activo: " + savedAsset.getAssetCode())
-        .paymentFormId(request.getPaymentFormId())
-        .bankAccountId(request.getBankAccountId() != null ? request.getBankAccountId() : null)
-        .cashAccountId(request.getCashAccountId() != null ? request.getCashAccountId() : null)
-        .checkId(request.getCheckId() != null ? request.getCheckId() : null)
-        .assetId(savedAsset.getId())
-        .build();
+        Transaction transaction = new Transaction();
+        transaction.setPaymentFormId(request.getPaymentFormId());
+        transaction.setMethodPaymentId(request.getPaymentMethodId());
 
-        // voucherService.createVoucher(voucherDTO);
+        transaction.setBankAccount(request.getBankAccountId() != null ? 
+        Transaction.AccountBank.builder()
+            .id(request.getBankAccountId())
+            .accountNumber(null)
+        .build() : null);
+
+        transaction.setCashAccount(request.getCashAccountId() != null ? 
+        Transaction.AccountCash.builder()
+            .id(request.getCashAccountId())
+            .accountNumber(null)
+        .build() : null);
+
+        transaction.setCheck(request.getCheckId() != null ? 
+        Transaction.Check.builder()
+            .id(request.getCheckId())
+            .checkbookId(null)
+            .numberCheck(null)
+            .checkbookNumber(null)
+        .build() : null);
+        transaction.setAssetId(savedAsset.getId());
+        transaction.setValuePayment(totalAmount);
+        transaction.setPaymentDate(request.getAcquisitionDate());
+        transaction.setDescription("Compra de activo: " + maskCode(savedAsset.getAssetCode()));
+
+        voucherService.createVoucher(transaction, 1L);
 
         return toViewDTO(savedAsset);
     }
@@ -540,16 +559,20 @@ public class AssetsService {
 
     private String generateAssetCode(ProductEntity product) {
         Assets assets = assetsRepository.findFirstByProductIdOrderByCreatedAtDesc(product.getId())
-                .orElseThrow(() -> new IllegalArgumentException("No se encontraron activos para el producto"));
+                .orElse(null);
 
-        String lastCode = assets.getAssetCode(); // Ej: "01"
+        String lastCode = assets != null ? assets.getAssetCode() : "0"; // Ej: "01"
 
-        int number = Integer.parseInt(lastCode); // convertir a número
+        int number = lastCode != null ? Integer.parseInt(lastCode) : 0; // convertir a número
         number++; // incrementar
 
-        String newCode = String.format("ACT%02d", number);
+        String newCode = String.valueOf(number);
 
         return newCode;
+    }
+
+    private String maskCode(String code) {
+        return String.format("ACT%02d", Integer.parseInt(code));
     }
 
     private String normalizeOptionalText(String text) {
@@ -597,7 +620,7 @@ public class AssetsService {
 
         return ViewAssetsDTO.builder()
                 .id(asset.getId())
-                .assetCode(asset.getAssetCode())
+                .assetCode(maskCode(asset.getAssetCode()))
                 .product(toProductDto(asset.getProduct()))
                 // .name(asset.getAssetName())
                 .description(asset.getDescription())

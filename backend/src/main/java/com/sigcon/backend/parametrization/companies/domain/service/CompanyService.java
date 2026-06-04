@@ -144,6 +144,9 @@ public class CompanyService {
                 .status(request.getStatus() != null ? request.getStatus() : CompanyStatus.ACTIVE)
                 .typeRegimen(typeRegimen)
                 .typeOrganization(typeOrganization)
+                .integrationUrl(emptyToNull(request.getIntegrationUrl()))
+                .monthsPerPeriod(request.getMonthsPerPeriod())
+                .fiscalYearStartMonth(request.getFiscalYearStartMonth())
                 .build();
 
         companyRepository.save(company);
@@ -275,6 +278,9 @@ public class CompanyService {
         company.setSize(emptyToNull(request.getSize()));
         company.setPhone(emptyToNull(request.getPhone()));
         company.setLogo(emptyToNull(logoName));
+        company.setIntegrationUrl(emptyToNull(request.getIntegrationUrl()));
+        company.setMonthsPerPeriod(request.getMonthsPerPeriod());
+        company.setFiscalYearStartMonth(request.getFiscalYearStartMonth());
 
         if (request.getStatus() != null) {
             company.setStatus(request.getStatus());
@@ -782,6 +788,7 @@ public class CompanyService {
                 .locations(locationDTOs)
                 .currencyType(currencyTypeDTO)
                 .withholdings(withholdingDTOs)
+                .integrationUrl(company.getIntegrationUrl())
                 .createdAt(company.getCreatedAt())
                 .updatedAt(company.getUpdatedAt())
                 .deletedAt(company.getDeletedAt())

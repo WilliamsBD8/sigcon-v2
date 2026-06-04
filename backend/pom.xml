@@ -153,6 +153,13 @@
 			<version>2.21.1</version>
 		</dependency>
 
+		<!-- Carga backend/.env en desarrollo local (OPENAI_API_KEY, BD, etc.) -->
+		<dependency>
+			<groupId>io.github.cdimascio</groupId>
+			<artifactId>dotenv-java</artifactId>
+			<version>3.2.0</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>

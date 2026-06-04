@@ -63,5 +63,9 @@ public class CreateCompanyRequest {
 
     @NotNull(message = "Debe proporcionar al menos una retencion para la compañía")
     private List<Long> withholdings;
+
+    private String integrationUrl;
+    private Integer monthsPerPeriod;
+    private Integer fiscalYearStartMonth;
 }
 

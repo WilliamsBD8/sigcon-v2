@@ -428,7 +428,7 @@ const EditCompany = ({
                                                     </div>
                                                 </div>
                                                 <div className="row">
-                                                    <div className="col-lg-4 col-md-12 col-sm-12 my-1">
+                                                    <div className="col-lg-3 col-md-12 col-sm-12 my-1">
                                                         <InputModal
                                                             id="legal-representative-company-edit"
                                                             label="Representante Legal"
@@ -445,7 +445,7 @@ const EditCompany = ({
                                                         />
                                                     </div>
 
-                                                    <div className="col-lg-4 col-md-12 col-sm-12 my-1">
+                                                    <div className="col-lg-3 col-md-12 col-sm-12 my-1">
                                                         <InputModal
                                                             id="email-company-edit"
                                                             label="Email"
@@ -462,7 +462,7 @@ const EditCompany = ({
                                                         />
                                                     </div>
 
-                                                    <div className="col-lg-4 col-md-12 col-sm-12 my-1">
+                                                    <div className="col-lg-3 col-md-12 col-sm-12 my-1">
                                                         <InputModal
                                                             id="phone-company-edit"
                                                             label="Teléfono"
@@ -476,6 +476,22 @@ const EditCompany = ({
                                                             required
                                                             error={errors.phone}
                                                             placeholder="Ingrese el teléfono"
+                                                        />
+                                                    </div>
+
+                                                    <div className="col-lg-3 col-md-12 col-sm-12 my-1">
+                                                        <InputModal
+                                                            id="integration-url-company-create"
+                                                            label="URL de integración"
+                                                            name="phone"
+                                                            type="text"
+                                                            value={company.integrationUrl}
+                                                            onChange={(e) => {
+                                                                setCompany({ ...company, integrationUrl: e.target.value })
+                                                                setErrors({ ...errors, integrationUrl: '' })
+                                                            }}
+                                                            error={errors.integrationUrl}
+                                                            placeholder="Ingrese la URL de integración"
                                                         />
                                                     </div>
                                                 </div>

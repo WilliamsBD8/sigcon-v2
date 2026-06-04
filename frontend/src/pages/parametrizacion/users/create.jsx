@@ -4,7 +4,7 @@ import InputSelectModal from "../../../components/molecules/inputSelectModal";
 import { base_url } from '../../../utils/functions';
 import { fetchHelper } from '../../../utils/fetch';
 
-const CreateUser = ({ modalRef, modalInstance, user, setUser, dataTableRef, setUserCreate, roles }) => {
+const CreateUser = ({ modalRef, modalInstance, user, setUser, dataTableRef, setUserCreate, roles, companies }) => {
 
     const [errors, setErrors] = useState({});
     const [errorMessage, setErrorMessage] = useState('');
@@ -23,7 +23,8 @@ const CreateUser = ({ modalRef, modalInstance, user, setUser, dataTableRef, setU
                 email: user.email,
                 username: user.username,
                 password: user.password,
-                roles: [user.roles]
+                roles: [user.roles],
+                companyId: user.companyId
             };
 
             const {data} = await fetchHelper.post(url, body, {}, 1000);
@@ -135,6 +136,45 @@ const CreateUser = ({ modalRef, modalInstance, user, setUser, dataTableRef, setU
                             </div>
                         </div>
 
+                        {
+                            companies.length > 0 && (
+                                <div className="row">
+                                    <div className="col col-md-6 mb-6 mt-2">
+                                        <InputSelectModal
+                                            id="companyId"
+                                            label="Empresa"
+                                            value={user.companyId}
+                                            onChange={(value) => setUser({ ...user, companyId: value })}
+                                            options={companies.map(company => ({
+                                                label: company.name,
+                                                id: company.id
+                                            }))}
+                                            error={errors.companyId}
+                                            placeholder="Seleccione una empresa"
+                                        />
+                                    </div>
+                                    
+                                    <div className="col col-md-6 mb-6 mt-2">
+                                        <InputSelectModal
+                                            id="roleId"
+                                            label="Rol del usuario"
+                                            value={user.roles}
+                                            onChange={(value) => setUser({
+                                                ...user,
+                                                roles: value
+                                            })}
+                                            error={errors.roleId}
+                                            placeholder="Seleccione un rol"
+                                            options={roles.map(role => ({
+                                                label: role.name,
+                                                id: role.name
+                                            }))}
+                                        />
+                                    </div>
+                                </div>
+                            )
+                        }
+
                         <div className="row">
                             <div className="col mb-6 mt-2">
                                 <InputModal
@@ -148,23 +188,6 @@ const CreateUser = ({ modalRef, modalInstance, user, setUser, dataTableRef, setU
                                 />
                             </div>
 
-                            <div className="col mb-6 mt-2">
-                                <InputSelectModal
-                                    id="roleId"
-                                    label="Rol del usuario"
-                                    value={user.roles}
-                                    onChange={(value) => setUser({
-                                        ...user,
-                                        roles: value
-                                    })}
-                                    error={errors.roleId}
-                                    placeholder="Seleccione un rol"
-                                    options={roles.map(role => ({
-                                        label: role.name,
-                                        id: role.name
-                                    }))}
-                                />
-                            </div>
                         </div>
                     </div>
                     <div className="modal-footer">

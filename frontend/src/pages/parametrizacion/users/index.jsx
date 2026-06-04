@@ -25,7 +25,8 @@ const IndexUsers = () => {
         username: '',
         password: '',
         status: 'ACTIVE',
-        roles: ''
+        roles: '',
+        companyId: null
     });
 
     const [search, setSearch] = useState({value: '', checked: true});
@@ -35,6 +36,7 @@ const IndexUsers = () => {
     const [userCreate, setUserCreate] = useState(false);
     const [userUpdate, setUserUpdate] = useState(false);
     const [userDelete, setUserDelete] = useState(false);
+    const [companies, setCompanies] = useState([]);
 
     const [errorDelete, setErrorDelete] = useState({
         show: false,
@@ -199,6 +201,15 @@ const IndexUsers = () => {
                 const url = base_url(['roles', 'getRoles']);
                 const {data} = await fetchHelper.post(url, {length: -1}, {}, 0);
                 setRoles(data);
+
+                if(isAdmin){
+                    const urlCompanies = base_url(['api/v1/companies', 'search']);
+                    const {data: companies} = await fetchHelper.post(urlCompanies, {length: -1, columns:[
+                        {data: 'status', searchable: true, search: {value: 'ACTIVE', regex: false}}
+                    ]}, {}, 0);
+                    setCompanies(companies);
+                }
+
             } catch (error) {
                 console.error('Error al cargar roles:', error);
             }
@@ -300,6 +311,7 @@ const IndexUsers = () => {
                 dataTableRef={dataTableRefUser}
                 setUserCreate={setUserCreate}
                 roles={roles}
+                companies={companies}
             /> : null}
 
             {userPermissions.some(p => p.code === 'UPDATE_USER' && p.type === 'UPDATE') || isAdmin ? <UpdatedUser

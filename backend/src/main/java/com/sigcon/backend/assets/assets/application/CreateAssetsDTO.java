@@ -61,8 +61,8 @@ public class CreateAssetsDTO {
         @Schema(description = "ID de la regla de depreciacion", example = "1")
         private Long depreciationRuleId;
 
-        @NotNull(message = "Faltan datos requeridos")
-        @Positive(message = "Faltan datos requeridos")
+        @NotNull(message = "El producto es requerido")
+        @Positive(message = "El producto es requerido")
         @Schema(description = "ID del producto", example = "1")
         private Long productId;
 

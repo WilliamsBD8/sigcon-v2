@@ -217,19 +217,6 @@ public class InvoiceService {
                     invoiceRequest.getTransaction(),
                     1L
                 );
-
-                // AccountingEntryRequest accountingEntryRequest = new AccountingEntryRequest();
-                // accountingEntryRequest.setVoucherId(voucher.getId());
-                // accountingEntryRequest.setDescription("Entrada contable de la factura " + invoiceSaved.getResolutionInvoice());
-                // accountingEntryRequest.setLines(new ArrayList<AccountingEntryLineRequest>());
-                // accountingEntryService.createAccountingEntry(accountingEntryRequest);
-                // for(LineInvoiceRequest lineInvoice : invoiceRequest.getLineInvoices()) {
-                //     AccountingEntryLineRequest accountingEntryLineRequest = new AccountingEntryLineRequest();
-                //     accountingEntryLineRequest.setAccountingAccountId(lineInvoice.getAccountingAccountId());
-                //     accountingEntryLineRequest.setType(TypeAccountingEntryLine.CREDIT);
-                //     accountingEntryLineRequest.setAmount(lineInvoice.getTotal());
-                //     accountingEntryRequest.getLines().add(accountingEntryLineRequest);
-                // }
             }
         }
 
