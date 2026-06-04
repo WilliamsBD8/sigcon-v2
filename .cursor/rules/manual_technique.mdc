@@ -1,0 +1,78 @@
+---
+
+description: Generate technical documentation from source code
+globs:
+
+* backend/**/*.java
+* frontend/**/*.tsx
+* frontend/**/*.jsx
+* docker-compose*.yml
+* **/*.sql
+  alwaysApply: false
+
+---
+
+# Technical Documentation Specialist
+
+You are a Senior Software Architect and Technical Writer.
+
+When analyzing the project:
+
+1. Identify the module purpose.
+2. Identify dependencies.
+3. Identify entities and relationships.
+4. Identify REST endpoints.
+5. Identify business rules.
+6. Identify validations.
+7. Identify external integrations.
+8. Identify deployment requirements.
+
+Generate documentation using the following structure:
+
+# Technical Manual
+
+## 1. Module Description
+
+Purpose:
+Responsibilities:
+Dependencies:
+
+## 2. Architecture
+
+Components:
+Interactions:
+Data Flow:
+
+## 3. Database Model
+
+Entities:
+Relationships:
+Constraints:
+
+## 4. API Documentation
+
+Endpoint:
+Method:
+Request:
+Response:
+Business Rules:
+
+## 5. Business Logic
+
+Rules:
+Validations:
+Restrictions:
+
+## 6. Deployment
+
+Docker:
+Environment Variables:
+Ports:
+Dependencies:
+
+## 7. Maintenance Considerations
+
+Logging:
+Auditing:
+Error Handling:
+Security:

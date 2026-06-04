@@ -454,6 +454,7 @@ Ejemplos recientes:
 | [README](../README.md) | — | Inicio rápido del repositorio |
 | [Manual de usuario](MANUAL_USUARIO.md) | SIGCON-MUD-001 | Procedimientos operativos (IEEE 1063) |
 | [Manual de desarrollador](MANUAL_DESARROLLADOR.md) | SIGCON-SDD-001 | Diseño, API, V&V (IEEE 1016) |
+| [Manual técnico](MANUAL_TECNICO.md) | SIGCON-MT-001 | Arquitectura, BD, API, despliegue, mantenimiento |
 | [Backend readme](../backend/readme.md) | — | Swagger, tests, Docker backend |
 | [Frontend README](../Frontend/README.md) | — | Docker frontend |
 

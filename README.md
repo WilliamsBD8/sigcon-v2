@@ -263,6 +263,7 @@ Con perfil dev:
 | **Documentación general** | SIGCON-DOC-000 | 1058, 1016 | Todos / evaluadores | [docs/DOCUMENTACION_GENERAL.md](docs/DOCUMENTACION_GENERAL.md) |
 | Manual de usuario | SIGCON-MUD-001 | 1063, 26515 | Contadores, tesoreros, operadores | [docs/MANUAL_USUARIO.md](docs/MANUAL_USUARIO.md) |
 | Manual de desarrollador (SDD) | SIGCON-SDD-001 | 1016, 26512, 1012 | Desarrolladores, arquitectos | [docs/MANUAL_DESARROLLADOR.md](docs/MANUAL_DESARROLLADOR.md) |
+| Manual técnico | SIGCON-MT-001 | 1016, 29148 | Arquitectos, DevOps, integradores | [docs/MANUAL_TECNICO.md](docs/MANUAL_TECNICO.md) |
 | Backend (instalación) | — | — | DevOps / backend | [backend/readme.md](backend/readme.md) |
 | Frontend (Docker) | — | — | DevOps / frontend | [Frontend/README.md](Frontend/README.md) |
 
