@@ -19,6 +19,7 @@
 | Versión | Fecha | Descripción |
 |---------|--------|-------------|
 | 1.0 | 2026-05-28 | Documentación general inicial del monorepo |
+| 1.1 | 2026-06-04 | Referencia a manual técnico y SDD v1.2 verificado |
 
 ---
 

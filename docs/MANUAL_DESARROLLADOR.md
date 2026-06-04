@@ -5,9 +5,9 @@
 | **Identificación del documento** | SIGCON-SDD-001 |
 | **Título** | Manual de desarrollador / Descripción de diseño |
 | **Producto** | SIGCON — Sistema de Gestión Contable y Financiera |
-| **Versión del documento** | 1.1 |
-| **Versión del producto** | 2026-1 (Proyecto Integrador USCO) |
-| **Fecha** | 2026-05-28 |
+| **Versión del documento** | 1.3 |
+| **Versión del producto** | 0.0.1-SNAPSHOT (Spring Boot 3.5.8) |
+| **Fecha** | 2026-06-04 |
 | **Estándar de referencia** | IEEE Std 1016-2009, IEEE Std 26512-2018, IEEE Std 1012-2016 |
 
 ---
@@ -18,6 +18,8 @@
 |---------|--------|-------------|
 | 1.0 | 2026-05 | SDD inicial |
 | 1.1 | 2026-05-28 | Estructura IEEE 1016; FV, inventario, comprobantes standalone, vistas de diseño |
+| 1.2 | 2026-06-04 | Verificación contra código: arquitectura hexagonal, tesorería, reportes, frontend vouchers TSX, apéndices API |
+| 1.3 | 2026-06-04 | Ampliación §7: funcionamiento detallado de subsistemas, flujos e interacciones |
 
 ---
 
@@ -47,7 +49,7 @@
 
 ### 1.1 Propósito
 
-Este documento describe el **diseño de implementación** de SIGCON para desarrolladores, integradores y mantenedores. Complementa el [Manual de usuario](MANUAL_USUARIO.md) y el [README](../README.md).
+Este documento describe el **diseño de implementación** de SIGCON para desarrolladores, integradores y mantenedores. Complementa el [Manual técnico](MANUAL_TECNICO.md) (API, BD y despliegue), el [Manual de usuario](MANUAL_USUARIO.md) y el [README](../README.md).
 
 ### 1.2 Alcance
 
@@ -58,9 +60,11 @@ Cubre el monorepo `dev/`:
 - `docs/` — documentación.
 - Orquestación Docker (`docker-compose.local.yml`).
 
+> **Nota Docker:** el directorio del cliente en el repositorio es `Frontend/` (mayúscula). En `docker-compose.local.yml` el servicio `frontend-local` referencia `./frontend` en minúsculas; en Windows puede requerir alinear nombre de carpeta o el `context` del compose.
+
 ### 1.3 Convenciones del documento
 
-- Rutas de API: prefijo `/api/v1` salvo módulos legacy (`/auth`, `/api/menus`).
+- Rutas de API: prefijo `/api/v1` salvo rutas legacy (`/auth`, `/users`, `/roles`, `/api/menus`, `/api/modules`, `/api/parameters`).
 - Permisos en BD: código `CREATE_X`; authority Spring: `PERM_CREATE_X`.
 - Identificadores de requisitos de ejemplo: `REQ-xxx` (trazabilidad en sección 15).
 
@@ -131,22 +135,24 @@ Cubre el monorepo `dev/`:
 
 ## 5. Puntos de vista del diseño
 
-### 5.1 Vista lógica (composición)
+### 5.1 Vista lógica (arquitectura hexagonal por módulo)
+
+Cada bounded context bajo `com.sigcon.backend.{modulo}` sigue, en general:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    Capa de presentación                  │
-│  Controllers (@RestController) + DTOs application        │
+│  interfaces/     Controllers REST, filtros expuestos     │
 ├─────────────────────────────────────────────────────────┤
-│                    Capa de dominio                       │
-│  Services (@Service) + Entities + Repository interfaces  │
+│  application/    DTOs, requests, responses             │
 ├─────────────────────────────────────────────────────────┤
-│                    Capa de infraestructura               │
-│  JPA Repositories, adapters, clients (OpenAI)            │
+│  domain/         @Service, entities, reglas de negocio  │
+│                  (+ interfaces de repositorio)           │
+├─────────────────────────────────────────────────────────┤
+│  infrastructure/ Implementación JPA, clientes externos │
 └─────────────────────────────────────────────────────────┘
 ```
 
-**Regla:** la lógica de negocio reside en `domain/service`, no en controllers.
+**Regla:** la lógica de negocio reside en `domain/service`, no en controllers. El paquete `general/` concentra seguridad JWT, configuración y utilidades transversales.
 
 ### 5.2 Vista de despliegue (física)
 
@@ -154,8 +160,9 @@ Cubre el monorepo `dev/`:
 |------|-----------|---------------|
 | Cliente | Navegador | — |
 | Servidor app | `backend` JAR / contenedor | 8080 |
-| Servidor web | `Frontend` Nginx / Vite dev | 5173 |
+| Servidor web | `Frontend/` Nginx / Vite dev | 5173 |
 | BD | PostgreSQL | 5432 |
+| Adminer (dev) | Contenedor compose | `${backend_port_adminer}` (p. ej. 8081) |
 
 ### 5.3 Vista de procesos — flujo comprobante standalone
 
@@ -199,82 +206,453 @@ Véase [Apéndice A](#apéndice-a--mapa-de-paquetes-backend) y README.
 
 ## 7. Descripción detallada por subsistema
 
+Esta sección describe **qué hace cada módulo**, **con qué datos opera**, **qué servicios coordinan el flujo** y **de qué otros subsistemas depende**. La numeración sigue el orden lógico de parametrización → maestros → operación → contabilidad → analítica.
+
+### Mapa de dependencias entre subsistemas
+
+```mermaid
+flowchart LR
+  subgraph base [Base]
+    P[parametrization]
+    L[lists_accounting]
+    T[third_parties]
+  end
+  subgraph operacion [Operación]
+    I[invoices]
+    PR[products]
+    V[vouchers]
+    B[banks]
+  end
+  subgraph contable [Contabilidad]
+    AE[accounting_entry]
+    BK[books]
+    R[reports]
+  end
+  P --> L
+  P --> T
+  L --> I
+  T --> I
+  PR --> I
+  I --> V
+  B --> V
+  L --> V
+  T --> V
+  V --> AE
+  AE --> BK
+  BK --> R
+  I --> D[dashboard]
+  V --> D
+```
+
+---
+
 ### 7.1 Parametrización (`parametrization`)
 
-- Usuarios, roles, permisos (`roles_permissions`).
-- Empresas, módulos, menús (`menu_permissions`).
-- Autenticación: `AuthController` → JWT.
+#### Propósito
+
+Gobernar **quién** accede al sistema, **a qué empresa** pertenece, **qué pantallas** ve y **qué operaciones** puede ejecutar. Es prerequisito de todos los demás módulos.
+
+#### Entidades y tablas principales
+
+| Concepto | Tablas / entidades | Uso |
+|----------|-------------------|-----|
+| Empresa | `companies` | Aislamiento multi-tenant |
+| Usuario | `users` | Credenciales, empresa, roles |
+| Rol / permiso | `roles`, `permissions`, `roles_permissions` | Autorización Spring (`PERM_*`) |
+| Módulo / menú | `modules`, `menus`, `menu_permissions` | Navegación dinámica en frontend |
+| Recursos transversales | `payment_methods`, `payment_forms` | Facturas y comprobantes |
+| Parámetros globales | `parameters` | Configuración de sistema |
+
+#### Servicios y controladores
+
+| Componente | Función |
+|------------|---------|
+| `AuthService` / `AuthController` (`/auth`) | Login JWT, registro, logout con blacklist, recuperación de contraseña (email + `PasswordResetToken`) |
+| `UserService` / `UserController` (`/users`) | CRUD usuarios, asignación de roles |
+| `RoleService` / `RoleController` (`/roles`) | Roles y permisos |
+| `CompanyService` / `CompanyController` | Empresas activas |
+| `ModuleService` / `ModuleController` (`/api/modules`) | CRUD módulos; **`GET /menu`** arma árbol módulo → menús visibles |
+| `MenuService` / `MenuController` (`/api/menus`) | CRUD menús (ruta, icono, `component` para React) |
+| `MenuPermissionsService` | Relación rol ↔ menú |
+| `ResourceService` / `ResourcesController` | Catálogos de métodos y formas de pago |
+| `ParameterService` | Parámetros de aplicación |
+
+#### Flujo de autenticación y menú
+
+```mermaid
+sequenceDiagram
+    participant FE as Frontend
+    participant Auth as AuthController
+    participant JWT as JwtService
+    participant Mod as ModuleController
+
+    FE->>Auth: POST /auth/login
+    Auth->>Auth: AuthenticationManager valida credenciales
+    Auth->>JWT: generateToken(user)
+    Auth-->>FE: token + UserDTO (roles, permisos, empresa)
+    FE->>Mod: GET /api/modules/menu (Bearer)
+    Mod->>Mod: Módulos ACTIVE + menús ACTIVE filtrados por rol
+    Mod-->>FE: ModuleDTO[] con hijos menus[]
+    FE->>FE: COMPONENT_MAP + rutas React
+```
+
+**Reglas relevantes:**
+
+- Permiso en BD `CREATE_VOUCHER` se expone a Spring como `PERM_CREATE_VOUCHER`.
+- `SUPERADMIN` omite restricción de empresa en dashboard; el resto usa `UserUtil.getUser().getCompany()`.
+- Menú: solo entradas con permiso; el campo `component` debe existir en `map_menu.jsx`.
+
+---
 
 ### 7.2 Listas contables (`lists_accounting`)
 
-- PUC: `ChartOfAccountController`.
-- Cuentas auxiliares: `AccountingAccountController`.
-- Impuestos, tasas, centros de costo, depreciación.
+#### Propósito
+
+Mantener el **catálogo contable** (PUC nacional y cuentas auxiliares por empresa), reglas tributarias, monedas, tasas y centros de costo que alimentan facturas, comprobantes y reportes.
+
+#### Submódulos
+
+| Submódulo | Servicio | API (prefijo) |
+|-----------|----------|---------------|
+| PUC | `ChartOfAccountService` | `/api/v1/chart-of-accounts` |
+| Cuentas auxiliares | `AccountingAccountService` | `/api/v1/accounting-accounts` |
+| Centros de costo | `CostCenterService` | `/api/v1/cost-centers` |
+| Reglas tributarias | `RuleTaxService` | `/api/v1/ruler-tax` |
+| Monedas / tipos | `CurrencyTypeService` | `/api/v1/accounting-lists/currency-types` |
+| Tasas de cambio | (controlador dedicado) | `/api/v1/exchange-rates` |
+| Depreciación (reglas) | `DepretationRuleService` | `/api/v1/depreciation-rules` |
+
+#### Funcionamiento
+
+1. **PUC (`chart_of_accounts`):** estructura jerárquica de cuentas (clase, grupo, cuenta). Es la referencia para validar códigos en asientos.
+2. **Cuenta auxiliar (`accounting_accounts`):** instancia por **empresa**, vinculada a una cuenta PUC; es la que se usa en líneas de `accounting_entry_line`.
+3. **Filtro en comprobantes:** `VoucherAccountingAccountFilterService` consulta cuentas permitidas según tipo de comprobante y si la línea es débito o crédito (clases PUC 11/12 solo vía tesorería en tipos manuales).
+
+**Dependencias:** parametrización (empresa del usuario). **Consumido por:** vouchers, invoices (implícito en totales), assets, reports.
+
+---
 
 ### 7.3 Terceros (`third_parties`)
 
-- CRUD terceros con roles (`CLIENTE`, `PROVEEDOR`, `EMPLEADO`).
-- Endpoint comprobantes: `GET /api/v1/vouchers/third-parties?role=EMPLEADO`.
+#### Propósito
+
+Registrar personas naturales/jurídicas con **roles de negocio** (cliente, proveedor, empleado) y datos comerciales asociados.
+
+#### Submódulos
+
+| Submódulo | Servicio | Uso |
+|-----------|----------|-----|
+| `third_parties` | `ThirdPartyService` | CRUD, carga masiva (`bulkStore`), catálogos de roles/estados |
+| `commercial_data` | `CommercialDataService` | Datos comerciales del tercero |
+| `ecl_segmentation` | `EclSegmentationService` | Segmentación (NIIF / provisiones) |
+
+#### API principal
+
+- Base: `/api/v1/third-parties` (DataTable, detalle, actualización de roles).
+- Comprobantes: `GET /api/v1/vouchers/third-parties?role=EMPLEADO|PROVEEDOR|CLIENTE` — lista reducida para formularios.
+
+#### Reglas de negocio
+
+| Tipo comprobante | Rol obligatorio en tercero |
+|------------------|----------------------------|
+| `PAYROLL` | `EMPLEADO` |
+| `SERVICE_PAYMENT` | `PROVEEDOR` |
+| `SERVICE_RECEIPT` | `CLIENTE` |
+
+`validateStandaloneThirdParty` en `VoucherService` aplica estas reglas antes de persistir.
+
+**Dependencias:** empresa del usuario. **Consumido por:** invoices (proveedor/cliente en FC/FV), vouchers standalone.
+
+---
 
 ### 7.4 Facturación (`invoices`)
 
-| Controlador | Ruta base | Tipo |
-|-------------|-----------|------|
-| `InvoiceFCController` | `/api/v1/invoices/fc` | Compra |
-| `InvoiceFVController` | `/api/v1/invoices/fv` | Venta |
-| `InvoiceOCController` | `/api/v1/invoices/oc` | Orden |
-| `InvoicesController` | `/api/v1/invoices/{id}` | Genérico + PDF |
+#### Propósito
 
-**Servicios clave:**
+Registrar documentos **FC** (compra), **FV** (venta) y **OC** (orden de compra), calcular totales por línea, actualizar inventario y habilitar pagos vía comprobantes.
 
-- `InvoiceService` — creación por tipo (estado `BILLED` en FC/FV).
-- `LineInvoiceService` — totales, `syncProductPrices` (FC→`price`, FV→`salePrice`).
-- `ProductInventoryService` — `applyStockMovement` (FC suma, FV resta con validación ≥ 0).
+#### Controladores por tipo
 
-**Migraciones relevantes:**
+| Controlador | Ruta base | Operación típica |
+|-------------|-----------|------------------|
+| `InvoiceFCController` | `/api/v1/invoices/fc` | Alta FC |
+| `InvoiceFVController` | `/api/v1/invoices/fv` | Alta FV |
+| `InvoiceOCController` | `/api/v1/invoices/oc` | Alta OC |
+| `InvoicesController` | `/api/v1/invoices` | Consulta, actualización, **PDF** |
+| `StatesInvoicesController` | `/api/v1/invoices/states` | Estados por bloque (FC/FV/OC) |
 
-- `V15__products_sale_price_stock.sql` — columnas `sale_price`, `stock`.
+#### Servicios y responsabilidades
+
+| Servicio | Responsabilidad |
+|----------|-----------------|
+| `InvoiceService` | `createInvoice`, `updateInvoice`, listado DataTable, cambio de estado, mapeo a DTO |
+| `LineInvoiceService` | Líneas, `calculateTotal`, tipo de cambio, sincronización de precios en producto |
+| `ProductInventoryService` | Movimiento de stock (solo FC/FV) |
+| `InvoicePdfService` | Generación de PDF |
+| `StateInvoiceService` | Catálogo de estados (`BILLED`, etc.) |
+
+#### Flujo de creación de factura (FC / FV)
+
+```mermaid
+sequenceDiagram
+    participant API as Invoice*Controller
+    participant IS as InvoiceService
+    participant LI as LineInvoiceService
+    participant INV as ProductInventoryService
+    participant DB as PostgreSQL
+
+    API->>IS: createInvoice(InvoiceRequest)
+    IS->>IS: Resolver estado BILLED (FC/FV)
+    IS->>DB: Persistir Invoices + encabezado
+    loop Por cada línea
+        IS->>LI: createLineInvoice
+        LI->>LI: calculateTotal / impuestos
+        LI->>INV: movementDeltaForLine + applyStockMovement
+        LI->>LI: syncProductPrices (FC→price, FV→salePrice)
+    end
+    IS-->>API: Invoices
+```
+
+#### Inventario (`ProductInventoryService`)
+
+| Tipo | Delta stock | Validación |
+|------|-------------|------------|
+| FC | `+ cantidad` | — |
+| FV | `− cantidad` | Error si stock &lt; 0 |
+| OC | Sin movimiento | — |
+
+#### Estados de factura
+
+- Enum transversal `StatusesInvoices`: `PENDING`, `PAID`.
+- Bloques por tipo en tabla de estados (`invoiceStateRepository.findByBlockAndCode("FC", "BILLED")`).
+- Un comprobante de pago **no** se crea si la factura ya está `PAID`; se valida que la suma de comprobantes no supere `total_payment`.
+
+#### Migraciones relevantes
+
+- `V15__products_sale_price_stock.sql` — `sale_price`, `stock` en productos.
 - `V16__invoice_fv_menu.sql` — menú y permisos FV.
+
+---
 
 ### 7.5 Comprobantes (`vouchers`)
 
-**Clases principales:**
+#### Propósito
 
-| Clase | Responsabilidad |
-|-------|-----------------|
-| `VoucherService` | CRUD, asiento, validación standalone |
-| `VoucherAccountingAccountFilterService` | Filtro PUC por tipo y línea D/C |
-| `VouchersController` | API REST |
+Registrar **movimientos de tesorería** (egreso/ingreso) con numeración por tipo, origen de fondos (banco, caja, cheque), vínculo opcional a factura y **asiento contable** en el periodo abierto.
 
-**Tipos standalone:** `PAYROLL`, `SERVICE_PAYMENT`, `SERVICE_RECEIPT`.
+#### Entidades
 
-**Validación líneas manuales (`validateStandaloneManualLines`):**
+| Entidad | Descripción |
+|---------|-------------|
+| `VoucherTypesEntity` | Catálogo (`PAYMENT`, `RECEIPT`, `PAYROLL`, `SERVICE_PAYMENT`, `SERVICE_RECEIPT`, …) con `code` y naturaleza OUTPUT/INPUT |
+| `VouchersEntity` | Comprobante: monto, fechas, origen de pago, `invoiceId` opcional, `thirdPartyId`, adjunto |
+| Relación | `vouchers` → `accounting_entry` → líneas; enlace a `diary_book` / periodo |
 
-- Egreso: `Σ débitos − Σ créditos = monto`.
-- Ingreso: `Σ créditos − Σ débitos = monto`.
-- Prohibido cuentas 11/12 en líneas manuales.
-- `buildTreasuryLine()` agrega línea banco/caja al persistir.
+#### Servicios
 
-**Listado standalone:** `POST /api/v1/vouchers/search` con `standaloneOnly: true`.
+| Servicio | Métodos clave |
+|----------|---------------|
+| `VoucherService` | `createVoucher`, `updateVoucher`, `deleteVoucher`, `createAccountingEntry`, `resolveVoucherTypeId`, `generateVoucherNumber` |
+| `VoucherTypeService` | Tipos paginados |
+| `VoucherAccountingAccountFilterService` | `filterForVoucherLine`, `isAccountAllowed`, reglas 11/12 y prefijos 51/41 |
+
+#### Flujo `createVoucher` (resumen)
+
+1. Resolver tipo (`resolveVoucherTypeId`): si hay `invoiceId`, infiere `PAYMENT` (FC) o `RECEIPT` (OC/OF/FV según reglas).
+2. Validar periodo contable **OPEN** (`AccountingPeriodService` vía `DiaryBook`).
+3. Validar monto &gt; 0, origen de pago (banco, caja y/o cheque), factura no `PAID`, tope de pagos.
+4. Si es standalone (`invoiceId == null`): `validateStandaloneThirdParty` + `validateStandaloneManualLines`.
+5. Persistir comprobante, adjunto en `uploads/vouchers/`, actualizar cheque (EMITIDO → COBRADO si aplica).
+6. `createAccountingEntry`: plantilla por `switch` del código de tipo + líneas manuales + **`buildTreasuryLine()`** (cuentas 11/12).
+7. Actualizar saldos: `bankAccountService.updateBalance`, `cashService.updateBalance`.
+8. Registrar en libro diario: `diaryBookService`.
+
+#### Tipos de comprobante y contabilización automática
+
+| Código | Requiere factura | Tercero | Contrapartida automática (ejemplo) |
+|--------|------------------|---------|-------------------------------------|
+| `PAYMENT` | Sí (FC) | — | 2205/2210 + tesorería CRÉDITO |
+| `RECEIPT` | Sí (FV/OC) | — | 130505/130510 + tesorería DÉBITO |
+| `PAYROLL` | No | EMPLEADO | 2505 + tesorería |
+| `SERVICE_PAYMENT` | No | PROVEEDOR | Líneas manuales 51* + tesorería |
+| `SERVICE_RECEIPT` | No | CLIENTE | Líneas manuales 41* + tesorería |
+
+#### Validación de líneas manuales (standalone)
+
+- Cuentas con prefijo **11** o **12** prohibidas en líneas manuales (`isTreasuryAccountCode`).
+- Egreso (`SERVICE_PAYMENT`, `PAYROLL`): Σ débitos − Σ créditos = monto del comprobante.
+- Ingreso (`SERVICE_RECEIPT`): Σ créditos − Σ débitos = monto.
+- Al menos una línea con prefijo **51** (pago servicios) o **41** (cobro servicios), según tipo.
+
+#### Listado
+
+`POST /api/v1/vouchers/search` con `DataTableRequest`; flag **`standaloneOnly: true`** excluye comprobantes con `invoiceId` no nulo.
+
+---
 
 ### 7.6 Contabilidad (`accounting_entry`, `books`)
 
-- Creación de `AccountingEntry` y líneas.
-- Periodos contables abiertos/cerrados (`AccountingPeriod`).
+#### Propósito
 
-### 7.7 Tesorería (`banks`, `cash`)
+Materializar la **partida doble** de cada operación y controlar **periodos contables** y el **libro diario**.
 
-- Cuentas, chequeras, cheques, movimientos, conciliación.
+#### `accounting_entry`
+
+| Componente | Función |
+|------------|---------|
+| `AccountingEntryService` | `createAccountingEntry(AccountingEntryRequest)` — valida cuentas, suma débitos/créditos, persiste cabecera y líneas |
+| `AccountingEntryLineService` | Mantenimiento de líneas |
+| Entidades | `AccountingEntry`, `AccountingEntryLine`, enum `DEBIT` / `CREDIT` |
+
+**Regla central:** total débitos = total créditos; si no cuadra, no se persiste el asiento.
+
+#### `books`
+
+| Servicio | Función |
+|----------|---------|
+| `AccountingPeriodService` | `ensurePeriodContainingDate`, periodo OPEN/CLOSED, cierre manual o por job |
+| `DiaryBookService` | `createDiaryBook`, `getDiaryBook`, `updateValuesDiaryBook` — enlace comprobante ↔ libro |
+| `GeneralLedgerService` | Mayor general (consultas internas) |
+
+**Restricción transversal:** si `AccountingPeriod.status == CLOSED`, `VoucherService` bloquea crear, editar y eliminar comprobantes (y regeneración de asiento).
+
+```mermaid
+flowchart TD
+    V[VoucherService.createVoucher]
+    AE[AccountingEntryService]
+    DB[DiaryBookService]
+    AP[AccountingPeriod OPEN?]
+    V --> AP
+    AP -->|sí| AE
+    AE --> DB
+    AP -->|no| E[Error: periodo cerrado]
+```
+
+---
+
+### 7.7 Tesorería (`banks`)
+
+#### Propósito
+
+Definir **origen y destino de fondos** usados en comprobantes: bancos, cuentas, cajas, cheques y herramientas de conciliación / flujo de caja.
+
+#### Submódulos y servicios
+
+| Submódulo | Servicio | API | Interacción con comprobantes |
+|-----------|----------|-----|------------------------------|
+| `banks` / `bankaccounts` | `BankService`, `BankAccountService` | `/api/v1/banks`, `/bank-accounts` | Selección de cuenta; `updateBalance` tras CRUD comprobante |
+| `cash_management` | `CashService` | `/api/v1/cash` | Cajas activas; actualización de saldo |
+| `checks` / `checkbooks` | `CheckService`, `CheckbookService` | `/api/v1/banks/checks`, `/checkbooks` | Cheque existente o nuevo; valor = monto comprobante |
+| `bnk_cash_flow` | `CashFlowProjectionService` | `/api/v1/bnk/projections` | Proyecciones (planificación) |
+| `financialmovements` | `FinancialMovementService` | Interno | Movimientos derivados de operaciones |
+| `reconciliation` | `BankReconciliationSessionService` | Interno / futuras APIs | Conciliación extracto vs sistema |
+
+#### Flujo de origen de pago en comprobante
+
+1. El frontend envía en `Transaction` uno de: `bankAccount`, `cashAccount`, `check` (existente o datos para crear).
+2. `VoucherService` resuelve entidades por id o número de cuenta.
+3. Tras guardar el comprobante, invoca actualización de saldo en banco/caja.
+4. El asiento incluye la línea de tesorería generada automáticamente (no capturada como línea manual 11/12).
+
+> **Nota implementación:** `CashController` declara `@RequestMapping("api/v1/cash")` sin `/` inicial; conviene unificar a `/api/v1/cash` para consistencia con el resto de la API.
+
+---
 
 ### 7.8 Activos y productos (`assets`, `products`)
 
-- Activos fijos, depreciación, NIIF.
-- `ProductController` — CRUD con `price`, `salePrice`, `stock`.
+#### Activos fijos (`assets`)
 
-### 7.9 Dashboard y asistente
+| Servicio | Función |
+|----------|---------|
+| `AssetsService` | Registro de activos, estados, vinculación contable |
+| `DepreciationCalculationService` | Cálculo de depreciación periódica |
+| `AssetDepreciationHistoryService` | Histórico de depreciaciones |
+| `NiifAlertsService` | Alertas NIIF |
 
-- `DashboardService` — KPIs por empresa / global.
-- `AssistantController` — OpenAI con contexto de sesión.
+API bajo `/api/v1/assets` y subrutas `/depreciation`. El frontend concentra pantallas en `pages/assets/` e informes en `asset-report-generation`.
+
+#### Productos (`products`)
+
+| Servicio | Función |
+|----------|---------|
+| `ProductService` | CRUD producto por empresa |
+| `ProductInventoryService` | Stock (ver §7.4) |
+| `ProductAccountingService` | Cuentas contables por defecto del producto |
+
+Campos operativos: `price` (compra), `salePrice` (venta), `stock`. API: `/api/v1/products`.
+
+**Dependencias:** listas contables (cuentas), parametrización (empresa). **Consumido por:** invoices (líneas), opcionalmente vouchers si se vinculan activos.
+
+---
+
+### 7.9 Reportes (`reports`)
+
+#### Propósito
+
+Generar **salidas PDF** y plantillas para reportes contables; las consultas de datos suelen apoyarse en servicios de `books` y cuentas ya registradas.
+
+| Componente | Función |
+|------------|---------|
+| `ReportPdfService` | `generateTemplateReport`, `generateReport(título, párrafos)` con iText/OpenPDF |
+| `ReportController` | `GET /api/v1/reports/template` — descarga de plantilla |
+
+#### Frontend
+
+No existe carpeta `pages/reports/`; los componentes viven en:
+
+- `pages/list_accounts/rep-balance-comprobacion/`
+- `pages/list_accounts/rep-libro-diario/`
+- `pages/list_accounts/rep-libro-mayor/`
+- `pages/list_accounts/rep-auxiliares-cuenta/`
+- `pages/list_accounts/rep-estados-financieros/`
+
+IDs en `COMPONENT_MAP`: `REP_BALANCE_COMPROBACION`, `REP_LIBRO_DIARIO`, etc.
+
+---
+
+### 7.10 Dashboard y asistente
+
+#### Dashboard (`dashboard`)
+
+`DashboardService.getOverview()`:
+
+| Ámbito | Condición | Datos |
+|--------|-----------|-------|
+| Empresa | Usuario normal | KPIs filtrados por `companyId` |
+| Global | Rol `SUPERADMIN` | Conteos y montos de todas las empresas + ranking top 5 |
+
+Indicadores: empresas, usuarios, facturas, comprobantes, activos, cuentas bancarias, montos totales, saldo bancario. Series últimos 6 meses: comprobantes y facturas por mes.
+
+#### Asistente IA (`assistant`)
+
+| Paso | Componente |
+|------|------------|
+| 1 | `AssistantContextService.buildSystemPrompt()` — usuario, empresa, KPIs resumidos |
+| 2 | `AssistantService.chat()` — valida `OPENAI_API_KEY` y flag habilitado |
+| 3 | `OpenAiChatClient` — envía historial sanitizado + mensaje usuario |
+| 4 | Respuesta con `reply` + `sessionSummary` |
+
+Sin API key configurada, el endpoint responde error controlado (no llama al proveedor externo).
+
+---
+
+### 7.11 Auditoría (`audits`)
+
+Módulo **transversal** (paquetes `aop`, `application`, `domain`, `interfaces`) para interceptar operaciones sensibles y dejar trazabilidad. No sustituye el soft delete (`deletedAt`) ni los campos `createdAt` / `user` en comprobantes; complementa escenarios de cumplimiento.
+
+---
+
+### 7.12 Resumen operativo por caso de uso
+
+| Caso de uso | Subsistemas involucrados | Artefacto principal |
+|-------------|-------------------------|---------------------|
+| Login y menú | parametrization | `AuthService`, `ModuleService.getModulesMenu` |
+| Crear FC con stock | invoices, products, lists_accounting, third_parties | `InvoiceService`, `ProductInventoryService` |
+| Pagar factura FC | vouchers, banks, accounting_entry, books | `VoucherService`, `AccountingEntryService` |
+| Nómina standalone | vouchers, third_parties, banks | `VoucherService` + tipo `PAYROLL` |
+| Cerrar mes | books | `AccountingPeriodService.closeAccountingPeriodManual` |
+| Ver KPIs | dashboard | `DashboardService.getOverview` |
+| Reporte PDF | reports, books (datos) | `ReportPdfService` + pantallas `rep-*` |
 
 ---
 
@@ -321,8 +699,10 @@ PostgreSQL 14+; Hibernate `ddl-auto=update` en desarrollo.
 | Ubicación | Propósito |
 |-----------|-----------|
 | `db/seeds/*.sql` | Datos maestros |
-| `db/migration/V*.sql` | Cambios incrementales |
+| `db/migration/V*.sql` | Cambios incrementales (hasta `V16__invoice_fv_menu.sql` en la rama actual) |
 | `db/indexes/*.sql` | Índices |
+
+Flyway y Hibernate pueden coexistir en desarrollo (`ddl-auto=update` en compose); en producción priorizar migraciones versionadas.
 
 ### 9.3 Entidades transversales
 
@@ -368,11 +748,19 @@ invoices ──► lines_invoice ──► products (price, sale_price, stock)
 
 ```
 Frontend/src/
-├── pages/{modulo}/     # Pantallas
-├── components/         # molecules: inputSelectModal, InputModal
-├── utils/map_menu.jsx  # COMPONENT_MAP
-└── routes/routes.jsx   # Rutas dinámicas + estáticas (vista factura)
+├── pages/
+│   ├── parametrizacion/   # usuarios, roles, menús, empresas
+│   ├── list_accounts/     # PUC, reportes (rep-*), centros de costo
+│   ├── invoices/FC|FV|OC/ # facturación por tipo
+│   ├── vouchers/          # comprobantes (TSX + componentes JSX)
+│   ├── cash-and-banks/    # tesorería
+│   └── assets/            # activos fijos
+├── components/molecules/   # inputSelectModal, InputModal, …
+├── utils/map_menu.jsx     # COMPONENT_MAP (id menú BD → componente)
+└── routes/routes.jsx      # Rutas dinámicas + estáticas (vista factura)
 ```
+
+Facturación y comprobantes usan **TypeScript** (`.tsx`) en pantallas principales; componentes compartidos de líneas contables pueden permanecer en `.jsx`.
 
 ### 11.2 Menú dinámico
 
@@ -382,25 +770,28 @@ Frontend/src/
 
 ### 11.3 Módulos de facturas (frontend)
 
-| Componente BD | Ruta | Carpeta |
-|---------------|------|---------|
-| `INVOICE_BILL` | `invoice-bill` | `pages/invoices/FC/` |
-| `INVOICE_SALE` | `invoice-sale` | `pages/invoices/FV/` |
-| `PURCHASE_ORDERS` | `purchase-orders` | `pages/invoices/OC/` |
+La **ruta URL** de cada pantalla proviene del campo `path` en la tabla `menus` (BD). El **componente** se resuelve por `component` → `COMPONENT_MAP`:
 
-`FormInvoice` acepta `thirdPartyRoleId`, `loadAllProducts` (FV).
+| ID `component` (BD) | Carpeta código | Pantalla principal |
+|---------------------|----------------|-------------------|
+| `INVOICE_BILL` | `pages/invoices/FC/` | `index` (listado FC) |
+| `INVOICE_SALE` | `pages/invoices/FV/` | `index` (listado FV) |
+| `PURCHASE_ORDERS` | `pages/invoices/OC/` | `index` (órdenes de compra) |
+| `INVOICE_BILL_PAYMENTS` | `pages/invoices/vouchers/` | Pagos vinculados a FC |
 
-`LineInvoices` — columnas precio venta/stock; tope cantidad en FV.
+Formularios FC/FV/OC: `create`, `edit`, `view` por tipo. En FV aplican validaciones de stock y precio venta en líneas de factura.
 
 ### 11.4 Comprobantes (frontend)
 
 | Archivo | Rol |
 |---------|-----|
-| `pages/vouchers/index.jsx` | Listado + modales |
-| `VoucherFormModal.jsx` | Formulario principal |
-| `AccountingLinesEditor.jsx` | Editor de líneas |
-| `AccountingLineRow.jsx` | Fila con InputSelectModal |
-| `voucherUtils.js` | Validación cliente |
+| `pages/vouchers/index.tsx` | Listado + modales crear/editar |
+| `pages/vouchers/form.tsx` | Formulario y líneas contables |
+| `pages/vouchers/view.tsx` | Detalle |
+| `pages/vouchers/voucherPdf.tsx` | Impresión / PDF |
+| `VoucherFormModal.jsx` | Modal de formulario (legacy compartido) |
+| `AccountingLinesEditor.jsx` / `AccountingLineRow.jsx` | Editor de líneas con `InputSelectModal` |
+| `voucherUtils.js` | Validación cliente (`STANDALONE_VOUCHER_TYPES`) |
 
 ### 11.5 Componente InputSelectModal
 
@@ -453,18 +844,20 @@ Alineado con IEEE 1012 (resumen aplicable al proyecto).
 ### 13.1 Desarrollo local
 
 ```powershell
-# Docker (recomendado)
+# Docker (API + BD + Adminer + frontend)
 docker compose -f docker-compose.local.yml --env-file backend/.env up --build -d
 
-# Backend
+# Backend (sin contenedor)
 cd backend
 $env:SPRING_PROFILES_ACTIVE = "dev"
 .\mvnw.cmd spring-boot:run
 
-# Frontend
+# Frontend (sin contenedor)
 cd Frontend
 npm install && npm run dev
 ```
+
+Variables de puerto en `.env` / `backend/.env`: `backend_port_api`, `backend_port_db_dev`, `backend_port_adminer`.
 
 ### 13.2 URLs locales
 
@@ -473,6 +866,7 @@ npm install && npm run dev
 | API | http://localhost:8080 |
 | Swagger | http://localhost:8080/swagger-ui.html |
 | Frontend | http://localhost:5173 |
+| Adminer | http://localhost:8081 (según `backend_port_adminer`) |
 
 ### 13.3 Producción
 
@@ -520,7 +914,7 @@ Matriz simplificada requisito ↔ implementación (IEEE 29148 / 1016).
 | REQ-VCH-01 | Comprobantes standalone | vouchers | TC-V-01 |
 | REQ-VCH-02 | Filtro cuentas por tipo | VoucherAccountingAccountFilterService | TC-V-01 |
 | REQ-SEG-01 | Autenticación JWT | general/security | Login manual |
-| REQ-RPT-01 | Reportes contables | books/reports | Manual §7.10 |
+| REQ-RPT-01 | Reportes contables | `reports`, `list_accounts/rep-*` | Swagger `/api/v1/reports` |
 
 ---
 
@@ -528,20 +922,22 @@ Matriz simplificada requisito ↔ implementación (IEEE 29148 / 1016).
 
 ```
 com.sigcon.backend/
-├── parametrization/
+├── parametrization/    # auth, users, roles, modules, menus
 ├── lists_accounting/
 ├── third_parties/
 ├── invoices/
 ├── vouchers/
 ├── accounting_entry/
 ├── books/
-├── banks/
+├── banks/              # incluye cash_management, checks, reconciliation
 ├── assets/
 ├── products/
+├── reports/
 ├── dashboard/
 ├── assistant/
-├── general/          # Security, config
-└── utils/            # UserUtil, DataTable, JSON responses
+├── audits/             # AOP / trazabilidad transversal
+├── general/            # Security, config
+└── utils/              # UserUtil, DataTable, JSON responses
 ```
 
 ---
@@ -551,18 +947,24 @@ com.sigcon.backend/
 | Método | Ruta | Descripción |
 |--------|------|-------------|
 | POST | `/auth/login` | Autenticación |
-| GET | `/api/modules/menu` | Menú por rol |
+| GET | `/api/modules/menu` | Menú por rol (`ModuleController`) |
 | POST | `/api/v1/vouchers/search` | Listado comprobantes |
 | POST | `/api/v1/vouchers/create` | Crear comprobante |
+| PUT | `/api/v1/vouchers/update/{id}` | Actualizar comprobante |
+| DELETE | `/api/v1/vouchers/delete/{id}` | Eliminar comprobante |
+| GET | `/api/v1/vouchers/{id}` | Detalle comprobante |
+| GET | `/api/v1/vouchers/third-parties?role=` | Terceros por rol |
 | POST | `/api/v1/vouchers/accounting-accounts/filter` | Cuentas permitidas |
 | POST | `/api/v1/invoices/fc/create` | Factura compra |
 | POST | `/api/v1/invoices/fv/create` | Factura venta |
+| POST | `/api/v1/invoices/oc/create` | Orden de compra |
 | GET | `/api/v1/invoices/{id}/pdf` | PDF factura |
 | POST | `/api/v1/products/create` | Producto |
 | GET | `/api/v1/dashboard/overview` | Dashboard |
+| GET | `/api/v1/reports/template` | Plantilla reportes |
 | POST | `/api/v1/assistant/chat` | Asistente IA |
 
-Listado completo: Swagger en entorno `dev`.
+Listado completo: Swagger en entorno `dev` (`SPRING_PROFILES_ACTIVE=dev`).
 
 ---
 
@@ -571,6 +973,7 @@ Listado completo: Swagger en entorno `dev`.
 | Documento | Enlace |
 |-----------|--------|
 | Documentación general | [DOCUMENTACION_GENERAL.md](DOCUMENTACION_GENERAL.md) |
+| Manual técnico (API, BD, despliegue) | [MANUAL_TECNICO.md](MANUAL_TECNICO.md) |
 | Manual de usuario | [MANUAL_USUARIO.md](MANUAL_USUARIO.md) |
 | README | [../README.md](../README.md) |
 | Backend readme | [../backend/readme.md](../backend/readme.md) |
