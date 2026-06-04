@@ -165,7 +165,7 @@ public class DataInitializer implements CommandLineRunner {
                 company.setStatus(CompanyStatus.ACTIVE);
                 company.setFiscalYearStartMonth(1);
                 company.setMonthsPerPeriod(1);
-                company.setIntegrationUrl(null);
+                company.setIntegrationUrl("http://157.230.220.199");
                 Company savedCompany = companyRepository.save(company);
 
                 CompanyLocation companyLocation = CompanyLocation.builder()

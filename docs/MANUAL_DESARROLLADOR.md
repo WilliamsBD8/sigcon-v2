@@ -973,6 +973,7 @@ Listado completo: Swagger en entorno `dev` (`SPRING_PROFILES_ACTIVE=dev`).
 | Documento | Enlace |
 |-----------|--------|
 | Documentación general | [DOCUMENTACION_GENERAL.md](DOCUMENTACION_GENERAL.md) |
+| Especificación de requerimientos (IEEE 29148) | [ESPECIFICACION_REQUERIMIENTOS.md](ESPECIFICACION_REQUERIMIENTOS.md) |
 | Manual técnico (API, BD, despliegue) | [MANUAL_TECNICO.md](MANUAL_TECNICO.md) |
 | Manual de usuario | [MANUAL_USUARIO.md](MANUAL_USUARIO.md) |
 | README | [../README.md](../README.md) |

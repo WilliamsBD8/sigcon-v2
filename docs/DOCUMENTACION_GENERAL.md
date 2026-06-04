@@ -20,6 +20,7 @@
 |---------|--------|-------------|
 | 1.0 | 2026-05-28 | Documentación general inicial del monorepo |
 | 1.1 | 2026-06-04 | Referencia a manual técnico y SDD v1.2 verificado |
+| 1.2 | 2026-06-04 | Índice SRS IEEE 29148 (ESPECIFICACION_REQUERIMIENTOS.md) |
 
 ---
 
@@ -456,13 +457,14 @@ Ejemplos recientes:
 | [Manual de usuario](MANUAL_USUARIO.md) | SIGCON-MUD-001 | Procedimientos operativos (IEEE 1063) |
 | [Manual de desarrollador](MANUAL_DESARROLLADOR.md) | SIGCON-SDD-001 | Diseño, API, V&V (IEEE 1016) |
 | [Manual técnico](MANUAL_TECNICO.md) | SIGCON-MT-001 | Arquitectura, BD, API, despliegue, mantenimiento |
+| [Especificación de requerimientos](ESPECIFICACION_REQUERIMIENTOS.md) | SIGCON-SRS-001 | RF, RNF, casos de uso, trazabilidad (IEEE 29148) |
 | [Backend readme](../backend/readme.md) | — | Swagger, tests, Docker backend |
 | [Frontend README](../Frontend/README.md) | — | Docker frontend |
 
 ### Mapa de lectura recomendado
 
 ```
-Evaluador / docente     → DOCUMENTACION_GENERAL → MANUAL_USUARIO + MANUAL_DESARROLLADOR
+Evaluador / docente     → DOCUMENTACION_GENERAL → ESPECIFICACION_REQUERIMIENTOS + MANUAL_USUARIO + MANUAL_DESARROLLADOR
 Usuario operativo       → MANUAL_USUARIO
 Nuevo desarrollador     → README → MANUAL_DESARROLLADOR → backend/readme
 DevOps                  → README → DOCUMENTACION_GENERAL §10-11
